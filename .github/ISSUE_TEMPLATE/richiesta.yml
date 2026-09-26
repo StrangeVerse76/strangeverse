@@ -1,0 +1,24 @@
+name: Richiesta
+description: Una nuova funzionalità o una modifica
+body:
+  - type: textarea
+    id: cosa
+    attributes:
+      label: Cosa si vuole
+      description: Descrizione dal punto di vista di chi usa il sito.
+    validations:
+      required: true
+  - type: textarea
+    id: fatto-quando
+    attributes:
+      label: È fatto quando…
+      description: Criteri di accettazione verificabili, uno per riga.
+      placeholder: |
+        - …
+    validations:
+      required: true
+  - type: textarea
+    id: note
+    attributes:
+      label: Note
+      description: Idee, riferimenti, vincoli.

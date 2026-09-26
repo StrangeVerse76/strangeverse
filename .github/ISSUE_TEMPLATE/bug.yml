@@ -1,0 +1,30 @@
+name: Bug
+description: Qualcosa non funziona come dovrebbe
+labels: [bug]
+body:
+  - type: textarea
+    id: cosa-succede
+    attributes:
+      label: Cosa succede
+    validations:
+      required: true
+  - type: textarea
+    id: atteso
+    attributes:
+      label: Cosa dovrebbe succedere
+    validations:
+      required: true
+  - type: textarea
+    id: passi
+    attributes:
+      label: Come riprodurlo
+      placeholder: |
+        1. Vai su …
+        2. Clicca …
+    validations:
+      required: true
+  - type: input
+    id: dove
+    attributes:
+      label: Dove
+      description: URL, browser e dispositivo.

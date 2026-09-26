@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    # Questo nome è il controllo obbligatorio nel ruleset di main: non rinominarlo.
+    name: CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Turborepo --affected confronta con il branch di base: serve la cronologia.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Formattazione
+        run: pnpm format:check
+
+      - name: Lint, typecheck e test (solo pacchetti toccati)
+        if: github.event_name == 'pull_request'
+        run: pnpm turbo run lint typecheck test --affected
+
+      - name: Lint, typecheck e test (tutto)
+        if: github.event_name != 'pull_request'
+        run: pnpm turbo run lint typecheck test
