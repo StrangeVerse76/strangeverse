@@ -32,3 +32,5 @@ export function createConfig(...extra) {
 }
 
 export default createConfig()
+
+export const rotto: number = 'non è un numero'
