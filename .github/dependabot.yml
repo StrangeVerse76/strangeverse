@@ -17,6 +17,9 @@ updates:
       # Bloccato alla 6.0 finché typescript-eslint non supporta la 7 (ADR 0002).
       - dependency-name: typescript
         update-types: [version-update:semver-major]
+      # I tipi seguono il runtime (Node 24, .nvmrc): la major si aggiorna insieme a Node.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
