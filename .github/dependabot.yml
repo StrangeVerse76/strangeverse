@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [infra]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      # Patch e minor insieme, una PR sola; le major arrivano una per una.
+      dipendenze-minori:
+        update-types: [minor, patch]
+    ignore:
+      # Bloccato alla 6.0 finché typescript-eslint non supporta la 7 (ADR 0002).
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [infra]
+    commit-message:
+      prefix: chore
+      include: scope

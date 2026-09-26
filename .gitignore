@@ -1,0 +1,23 @@
+# Dipendenze e build
+node_modules/
+dist/
+.output/
+.nuxt/
+.nitro/
+.cache/
+.turbo/
+coverage/
+playwright-report/
+test-results/
+
+# Segreti e configurazioni locali (mai nel repo)
+.env
+.env.*
+!.env.example
+.vercel/
+.claude/settings.local.json
+
+# Sistema
+.DS_Store
+Icon?
+*.log
