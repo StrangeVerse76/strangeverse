@@ -139,6 +139,10 @@ button {
   padding-inline: var(--space-4);
 }
 
+.container--wide {
+  max-width: none;
+}
+
 @media (min-width: 48rem) {
   .container {
     padding-inline: var(--space-6);

@@ -2,7 +2,10 @@
 const { site } = useAppConfig()
 
 useHead({
-  titleTemplate: (title) => (title ? `${title} · ${site.name}` : site.name),
+  titleTemplate: (title) => {
+    const base = site.appName || site.name
+    return title ? `${title} · ${base}` : base
+  },
 })
 </script>
 

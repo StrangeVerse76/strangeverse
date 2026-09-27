@@ -10,7 +10,8 @@
     "test": {},
     "test:e2e": {
       "dependsOn": ["build"],
-      "outputs": ["playwright-report/**", "test-results/**"]
+      "outputs": ["playwright-report/**", "test-results/**"],
+      "passThroughEnv": ["PLAYWRIGHT_BASE_URL", "PLAYWRIGHT_CHANNEL"]
     },
     "dev": {
       "cache": false,

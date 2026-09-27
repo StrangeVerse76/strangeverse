@@ -23,6 +23,7 @@ Per lavorare su un solo pacchetto: `pnpm <task> --filter <nome>` (es. `pnpm test
 Playwright:
 
 - Con `PLAYWRIGHT_BASE_URL=<url>` i test girano su quell'indirizzo, per esempio un'anteprima Vercel. Senza, avviano la build locale su `localhost:3100`.
+- Ogni app ha la sua porta per gli e2e locali (portale 3100, soundverse 3101), così Turborepo li esegue in parallelo. Le variabili `PLAYWRIGHT_*` sono dichiarate in `passThroughEnv` di `turbo.json`.
 - Con `PLAYWRIGHT_CHANNEL=chrome` usano il Chrome installato. Serve in locale, perché su questa rete il download di Chromium da parte di Playwright va in timeout.
 
 ## Struttura
@@ -30,7 +31,7 @@ Playwright:
 ```
 apps/                 # un'app Nuxt per cartella, ognuna con il proprio progetto Vercel
   portale/            # hub: home, catalogo app (app/data/apps.ts), chi sono
-  soundverse/         # (Fase 6) studio audio nel browser (ex Musica, vedi ADR 0006)
+  soundverse/         # studio audio nel browser (ex Musica, ADR 0006): rack, libreria, timeline
 packages/
   config/             # ESLint, TypeScript, Prettier condivisi (@strangeverse/config)
   ui/                 # Nuxt Layer condiviso: tema, layout, header, 404 (@strangeverse/ui)
@@ -51,7 +52,11 @@ docs/
 - Il `build` del layer esegue solo `nuxt prepare`: genera `packages/ui/.nuxt/`, che serve alla build delle app (Vite legge il tsconfig del layer). Turborepo lo lancia prima delle app grazie a `dependsOn: ["^build"]`.
 - Ogni app Nuxt lo estende con `extends: ['@strangeverse/ui']` e ne eredita `app.vue`, `error.vue` (404), il layout `default`, `SiteHeader`, `SiteFooter`, `ThemeToggle`, `SiteLogo`, il CSS globale e la favicon.
 - Il tema è fatto di token CSS in `packages/ui/app/assets/css/main.css`. Il predefinito è lo scuro; con la classe `.light` su `<html>` si passa al chiaro, gestito da `@nuxtjs/color-mode`. I componenti usano solo le variabili (`--color-*`, `--space-*`, `--text-*`, `--radius-*`), mai colori scritti a mano.
-- Ogni app si configura nel proprio `app/app.config.ts`, con `site.nav` per il menu e `site.homeUrl` per l'indirizzo del portale (da impostare nelle sotto-app).
+- Ogni app si configura nel proprio `app/app.config.ts`:
+  - `site.nav` per il menu;
+  - `site.homeUrl` per l'indirizzo del portale, da impostare nelle sotto-app;
+  - `site.appName` per il nome della sotto-app, mostrato come "StrangeVerse / Nome" e usato nei titoli.
+- `definePageMeta({ wide: true })` rende la pagina a tutta larghezza: header, contenuto e footer.
 - I testi dell'interfaccia sono in italiano (`lang="it"`). i18n non è ancora attiva (D4).
 
 ### Aggiungere un'app al catalogo

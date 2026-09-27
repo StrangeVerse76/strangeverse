@@ -1,8 +1,16 @@
+<script setup lang="ts">
+const route = useRoute()
+</script>
+
 <template>
   <div class="page">
     <a class="skip-link" href="#contenuto">Vai al contenuto</a>
     <SiteHeader />
-    <main id="contenuto" class="container page__main">
+    <main
+      id="contenuto"
+      class="container page__main"
+      :class="{ 'container--wide': route.meta.wide }"
+    >
       <slot />
     </main>
     <SiteFooter />
