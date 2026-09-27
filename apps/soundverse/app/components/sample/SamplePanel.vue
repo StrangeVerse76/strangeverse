@@ -18,6 +18,7 @@ import {
 } from '~/samples/ops'
 import type { ParamDef } from '~/synth/spec'
 import { useLibraryStore } from '~/stores/library'
+import { useTimelineStore } from '~/stores/timeline'
 import { formatDb, formatDuration } from '~/utils/format'
 
 interface Result {
@@ -29,6 +30,7 @@ interface Result {
 }
 
 const library = useLibraryStore()
+const timeline = useTimelineStore()
 const player = new BufferPlayer()
 
 const sourceId = ref<string | null>(null)
@@ -192,6 +194,10 @@ function addOp() {
       { type: 'trim', start: r.start, end: r.end },
       ...ops.value.filter((op) => op.type !== 'trim'),
     ]
+  } else if (type === 'tempo') {
+    // Dal BPM stimato della sorgente a quello del progetto aperto nella timeline.
+    const fromBpm = source.value?.analysis?.bpm ?? timeline.project.bpm
+    ops.value.push({ type: 'tempo', fromBpm, toBpm: timeline.project.bpm })
   } else {
     ops.value.push(defaultOp(type))
   }
@@ -328,6 +334,8 @@ async function onDrop(event: DragEvent) {
         {{ formatDuration(source.duration) }} · {{ source.channels === 1 ? 'mono' : 'stereo' }} ·
         picco {{ formatDb(source.peak) }} · RMS
         {{ sourceRms === null ? '…' : formatDb(sourceRms) }}
+        <template v-if="source.analysis?.bpm"> · {{ source.analysis.bpm }} BPM</template>
+        <template v-if="source.analysis?.key"> · {{ source.analysis.key }}</template>
       </p>
 
       <AudioWaveform

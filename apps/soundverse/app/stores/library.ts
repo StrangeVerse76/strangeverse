@@ -5,7 +5,8 @@ import { computePeaks, peakLevel } from '~/audio/peaks'
 import { encodeWav } from '~/audio/wav'
 import * as storage from '~/library/db'
 import { filterClips, type ClipFilter } from '~/library/filter'
-import type { Clip, ClipKind, ClipRecipe } from '~/library/types'
+import { analyze, MIN_ANALYSIS_SECONDS } from '~/analysis/analyze'
+import type { Clip, ClipAnalysis, ClipKind, ClipRecipe } from '~/library/types'
 
 export interface NewClip {
   name: string
@@ -13,6 +14,14 @@ export interface NewClip {
   channels: Float32Array[]
   recipe: ClipRecipe
   tags?: string[]
+  analysis?: ClipAnalysis
+}
+
+/** BPM noto dalla ricetta (batteria e mix), senza bisogno di stimarlo. */
+function recipeBpm(recipe: ClipRecipe): number | null {
+  if (recipe.type === 'drums') return recipe.pattern.bpm
+  if (recipe.type === 'mix') return recipe.project.bpm
+  return null
 }
 
 interface DeletedClip {
@@ -54,7 +63,7 @@ export const useLibraryStore = defineStore('library', {
     },
 
     /** Crea un clip dai campioni: codifica il WAV, calcola i picchi e salva tutto. */
-    async add({ name, kind, channels, recipe, tags = [] }: NewClip): Promise<Clip> {
+    async add({ name, kind, channels, recipe, tags = [], analysis }: NewClip): Promise<Clip> {
       const used = channels.slice(0, MAX_CHANNELS)
       const length = used[0]?.length ?? 0
       const clip: Clip = {
@@ -70,6 +79,9 @@ export const useLibraryStore = defineStore('library', {
         createdAt: Date.now(),
         recipe,
       }
+      const bpm = recipeBpm(recipe)
+      if (analysis) clip.analysis = analysis
+      else if (bpm !== null) clip.analysis = { bpm, key: null }
       const audio = new Blob([encodeWav(used, SAMPLE_RATE)], { type: 'audio/wav' })
       await storage.saveClip(clip, audio)
       this.clips.push(clip)
@@ -84,11 +96,13 @@ export const useLibraryStore = defineStore('library', {
       for (const file of files) {
         try {
           const buffer = await decodeAudio(await file.arrayBuffer())
+          const channels = bufferToChannels(buffer)
           const clip = await this.add({
             name: file.name.replace(/\.[^.]+$/, ''),
             kind: 'sample',
-            channels: bufferToChannels(buffer),
+            channels,
             recipe: { type: 'import', fileName: file.name },
+            ...(buffer.duration >= MIN_ANALYSIS_SECONDS && { analysis: analyze(channels) }),
           })
           imported.push(clip)
         } catch (cause) {
@@ -108,6 +122,25 @@ export const useLibraryStore = defineStore('library', {
       const trimmed = name.trim()
       if (!clip || !trimmed || trimmed === clip.name) return
       clip.name = trimmed
+      await storage.updateClip(plain(clip))
+    },
+
+    /** BPM e tonalità corretti a mano. */
+    async setAnalysis(id: string, analysis: Omit<ClipAnalysis, 'manual'>) {
+      const clip = this.clips.find((c) => c.id === id)
+      if (!clip) return
+      clip.analysis = { ...analysis, manual: true }
+      await storage.updateClip(plain(clip))
+    },
+
+    /** Stima (di nuovo) BPM e tonalità dall'audio. */
+    async estimate(id: string) {
+      const clip = this.clips.find((c) => c.id === id)
+      if (!clip) return
+      const channels = bufferToChannels(await this.getBuffer(id))
+      const estimated = analyze(channels)
+      const bpm = recipeBpm(clip.recipe) ?? estimated.bpm
+      clip.analysis = { bpm, key: estimated.key }
       await storage.updateClip(plain(clip))
     },
 

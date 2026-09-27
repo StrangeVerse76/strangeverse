@@ -33,6 +33,18 @@ export interface Clip {
   /** Millisecondi dall'epoch. */
   createdAt: number
   recipe: ClipRecipe
+  /**
+   * BPM e tonalità: stimati (campioni importati), presi dalla ricetta (batteria, mix)
+   * o corretti a mano. Facoltativo: i clip salvati prima non ce l'hanno.
+   */
+  analysis?: ClipAnalysis
+}
+
+export interface ClipAnalysis {
+  bpm: number | null
+  key: string | null
+  /** true se l'ha impostata Pietro a mano: una nuova stima non la sovrascrive senza chiedere. */
+  manual?: boolean
 }
 
 export const kindLabels: Record<ClipKind, string> = {

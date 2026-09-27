@@ -232,6 +232,8 @@ async function onDrop(event: DragEvent) {
           <span class="clip__meta">
             {{ kindLabels[clip.kind] }} · {{ formatDuration(clip.duration) }} ·
             {{ clip.channels === 1 ? 'mono' : 'stereo' }}
+            <template v-if="clip.analysis?.bpm"> · {{ clip.analysis.bpm }} BPM</template>
+            <template v-if="clip.analysis?.key"> · {{ clip.analysis.key }}</template>
           </span>
         </button>
       </li>
@@ -244,6 +246,7 @@ async function onDrop(event: DragEvent) {
         :label="`Forma d'onda di ${library.selected.name}`"
         @seek="seek"
       />
+      <LibraryAnalysis :clip="library.selected" />
       <div class="detail__actions">
         <button type="button" class="button" @click="togglePlay">
           {{ isPlayingSelected ? 'Stop' : 'Ascolta' }}
