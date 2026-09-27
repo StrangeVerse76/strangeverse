@@ -5,8 +5,12 @@
       "dependsOn": ["^prepare:types"],
       "outputs": [".nuxt/**"]
     },
+    "db:migrate": {
+      "cache": false,
+      "passThroughEnv": ["DATABASE_URL", "DATABASE_URL_UNPOOLED"]
+    },
     "build": {
-      "dependsOn": ["^build", "^prepare:types", "typecheck", "test"],
+      "dependsOn": ["^build", "^prepare:types", "^db:migrate", "typecheck", "test"],
       "outputs": ["dist/**", ".output/**", ".nuxt/**"]
     },
     "lint": {},

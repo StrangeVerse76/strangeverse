@@ -8,3 +8,4 @@ _res/
 .nitro/
 playwright-report/
 test-results/
+packages/db/migrations

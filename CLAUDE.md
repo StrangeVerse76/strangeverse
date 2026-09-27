@@ -35,7 +35,7 @@ apps/                 # un'app Nuxt per cartella, ognuna con il proprio progetto
 packages/
   config/             # ESLint, TypeScript, Prettier condivisi (@strangeverse/config)
   ui/                 # Nuxt Layer condiviso: tema, layout, header, 404 (@strangeverse/ui)
-  db/                 # (Fase 5) schema Drizzle, migrazioni, client
+  db/                 # schema Drizzle, migrazioni, client Neon (@strangeverse/db)
 docs/
   piano-di-lavoro.md  # il piano
   decisioni/          # ADR: una decisione per file
@@ -62,6 +62,13 @@ docs/
 ### Aggiungere un'app al catalogo
 
 Si aggiunge una voce in `apps/portale/app/data/apps.ts`. Un'app `live` deve avere un `url` https, e i test unitari lo verificano.
+
+### Database `@strangeverse/db`
+
+- Neon Postgres con Drizzle (ADR 0011). Lo schema è in `packages/db/src/schema.ts`: le tabelle di Better Auth (`user`, `session`, `account`, `verification`) e `records`, una riga per clip, progetto o kit sincronizzato, con le eliminazioni come `deletedAt`.
+- Una modifica allo schema si fa così: si cambia `schema.ts`, poi `pnpm --filter @strangeverse/db db:generate --name <cosa>` e si committa la migrazione SQL. Le migrazioni non si modificano a mano e Prettier le ignora.
+- `db:migrate` è un task di Turborepo da cui dipende la build delle app che usano il DB. Su Vercel applica le migrazioni prima della build: le anteprime sul loro branch Neon, la produzione sul database principale. Senza `DATABASE_URL` (CI, build locale) non fa niente.
+- In locale `DATABASE_URL` (ambiente Development) punta al branch Neon `sviluppo`, mai alla produzione. Per applicarci le migrazioni: `node --env-file=../../apps/soundverse/.env.local scripts/migrate.js` da `packages/db`.
 
 ## Soundverse
 
