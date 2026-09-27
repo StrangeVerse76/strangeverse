@@ -24,8 +24,8 @@ export const apps: AppEntry[] = [
     description:
       'Uno studio audio nel browser: synth, campioni, equalizzatore e una timeline per comporre.',
     icon: '🎛️',
-    status: 'coming-soon',
-    url: null,
+    status: 'live',
+    url: 'https://soundverse-strange-verse.vercel.app',
   },
 ]
 

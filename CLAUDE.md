@@ -101,7 +101,14 @@ Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-faile
 
 ## Deploy (Vercel)
 
-- Un progetto Vercel per app, tutti dallo stesso repo (team `strange-verse`, piano Hobby). Il progetto si chiama `strangeverse`, ha Root Directory `apps/portale` e la produzione è su https://strangeverse-strange-verse.vercel.app.
+- Un progetto Vercel per app, tutti dallo stesso repo (team `strange-verse`, piano Hobby):
+
+  | App        | Progetto Vercel | Root Directory    | Produzione                                    |
+  | ---------- | --------------- | ----------------- | --------------------------------------------- |
+  | portale    | `strangeverse`  | `apps/portale`    | https://strangeverse-strange-verse.vercel.app |
+  | soundverse | `soundverse`    | `apps/soundverse` | https://soundverse-strange-verse.vercel.app   |
+
+- Un nuovo progetto si crea importando lo stesso repo, con Root Directory `apps/<app>` e preset Nuxt; poi va impostata la protezione solo sulle anteprime (ADR 0007).
 - Ogni PR ha un deploy di **anteprima**; il merge su `main` va in **produzione**. Claude non lancia mai deploy di produzione dalla CLI.
 - `apps/<app>/vercel.json` usa `turbo-ignore` come _ignored build step_: se un commit non tocca l'app né i pacchetti da cui dipende, Vercel salta la build. La versione di `turbo-ignore` va tenuta uguale a quella di `turbo`.
 - Collegamento locale, una volta per cartella: `cd apps/<app> && vercel link` e poi `vercel env pull .env.local`. `.vercel/` e `.env*` sono ignorati da Git, e i file `.env*` non si leggono mai.

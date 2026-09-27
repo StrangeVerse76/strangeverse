@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('la home mostra il catalogo con Soundverse in arrivo', async ({ page }) => {
+test('la home mostra il catalogo con Soundverse online', async ({ page }) => {
   await page.goto('/')
 
   await expect(page).toHaveTitle('StrangeVerse')
@@ -9,9 +9,11 @@ test('la home mostra il catalogo con Soundverse in arrivo', async ({ page }) => 
   const catalog = page.getByRole('region', { name: 'Le app' })
   const soundverse = catalog.getByRole('article').filter({ hasText: 'Soundverse' })
   await expect(soundverse).toBeVisible()
-  await expect(soundverse).toContainText('In arrivo')
-  // Un'app in arrivo non è ancora raggiungibile.
-  await expect(soundverse.getByRole('link')).toHaveCount(0)
+  await expect(soundverse).toContainText('Online')
+  await expect(soundverse.getByRole('link', { name: 'Soundverse' })).toHaveAttribute(
+    'href',
+    'https://soundverse-strange-verse.vercel.app',
+  )
 })
 
 test('si arriva a "Chi sono" dal menu', async ({ page }) => {
