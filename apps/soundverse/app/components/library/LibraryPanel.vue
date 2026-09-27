@@ -4,6 +4,7 @@ import { BufferPlayer } from '~/audio/player'
 import { kindLabels, type Clip } from '~/library/types'
 import { MP3_BITRATES, type Mp3Bitrate } from '~/audio/mp3-core'
 import { useLibraryStore } from '~/stores/library'
+import { usePadsStore } from '~/stores/pads'
 import { useTimelineStore } from '~/stores/timeline'
 import { blockLength } from '~/timeline/model'
 import { formatDuration } from '~/utils/format'
@@ -23,6 +24,7 @@ async function downloadMp3(clip: Clip) {
   }
 }
 const timeline = useTimelineStore()
+const pads = usePadsStore()
 
 /** Tipo MIME del trascinamento verso la timeline. */
 const DRAG_TYPE = 'application/x-soundverse-clip'
@@ -52,7 +54,10 @@ watch(
     if (library.status !== 'ready' || !previous) return
     const current = new Set(ids)
     const removed = new Set(previous.filter((id) => !current.has(id)))
-    if (removed.size) timeline.removeClips(removed)
+    if (removed.size) {
+      timeline.removeClips(removed)
+      pads.removeClips(removed)
+    }
   },
 )
 

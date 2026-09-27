@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+import type { Kit } from '~/pads/kit'
 import type { TimelineProject } from '~/timeline/model'
 import type { Clip } from './types'
 
@@ -16,12 +17,13 @@ interface SoundverseDB extends DBSchema {
   /** WAV a 24 bit, con la stessa chiave del clip. */
   audio: { key: string; value: Blob }
   projects: { key: string; value: StoredProject }
+  kits: { key: string; value: Kit }
 }
 
 let database: Promise<IDBPDatabase<SoundverseDB>> | null = null
 
 function db() {
-  database ??= openDB<SoundverseDB>('soundverse', 2, {
+  database ??= openDB<SoundverseDB>('soundverse', 3, {
     // Ogni versione aggiunge i suoi store: chi ha già il database li riceve senza perdere niente.
     upgrade(upgrade, oldVersion) {
       if (oldVersion < 1) {
@@ -29,6 +31,7 @@ function db() {
         upgrade.createObjectStore('audio')
       }
       if (oldVersion < 2) upgrade.createObjectStore('projects', { keyPath: 'id' })
+      if (oldVersion < 3) upgrade.createObjectStore('kits', { keyPath: 'id' })
     },
   })
   return database
@@ -75,4 +78,16 @@ export async function saveProject(project: StoredProject): Promise<void> {
 
 export async function deleteProject(id: string): Promise<void> {
   await (await db()).delete('projects', id)
+}
+
+export async function listKits(): Promise<Kit[]> {
+  return (await db()).getAll('kits')
+}
+
+export async function saveKit(kit: Kit): Promise<void> {
+  await (await db()).put('kits', kit)
+}
+
+export async function deleteKit(id: string): Promise<void> {
+  await (await db()).delete('kits', id)
 }

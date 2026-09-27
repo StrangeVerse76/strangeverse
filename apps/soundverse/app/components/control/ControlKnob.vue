@@ -11,6 +11,8 @@ const props = defineProps<{
   ariaLabel?: string
   /** Solo la manopola, senza etichetta e valore visibili (restano per i lettori di schermo). */
   compact?: boolean
+  /** Testo al posto del valore (es. "intera" per una lunghezza a fondo scala). */
+  valueText?: string
 }>()
 
 const model = defineModel<number>({ required: true })
@@ -24,7 +26,9 @@ const SWEEP = 270
 const name = computed(() => props.label ?? props.def.label)
 const accessibleName = computed(() => props.ariaLabel ?? name.value)
 const position = computed(() => toNormalized(model.value, props.def))
-const text = computed(() => formatParam(model.value, props.def.unit, props.def.step))
+const text = computed(
+  () => props.valueText ?? formatParam(model.value, props.def.unit, props.def.step),
+)
 
 function set(value: number) {
   model.value = roundTo(clamp(value, props.def.min, props.def.max), props.def.step)
