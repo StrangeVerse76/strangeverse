@@ -1,10 +1,11 @@
 <script setup lang="ts">
 const { site } = useAppConfig()
+const route = useRoute()
 </script>
 
 <template>
   <footer class="footer">
-    <div class="container footer__inner">
+    <div class="container footer__inner" :class="{ 'container--wide': route.meta.wide }">
       <p>{{ site.name }} · progetto personale</p>
       <a :href="site.repoUrl" rel="noopener">Codice su GitHub</a>
     </div>

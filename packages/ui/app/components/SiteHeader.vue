@@ -1,14 +1,21 @@
 <script setup lang="ts">
 const { site } = useAppConfig()
+const route = useRoute()
 </script>
 
 <template>
   <header class="header">
-    <div class="container header__inner">
-      <NuxtLink :to="site.homeUrl" class="brand">
-        <SiteLogo class="brand__logo" />
-        <span>{{ site.name }}</span>
-      </NuxtLink>
+    <div class="container header__inner" :class="{ 'container--wide': route.meta.wide }">
+      <div class="brand">
+        <NuxtLink :to="site.homeUrl" class="brand__home">
+          <SiteLogo class="brand__logo" />
+          <span>{{ site.name }}</span>
+        </NuxtLink>
+        <template v-if="site.appName">
+          <span class="brand__sep" aria-hidden="true">/</span>
+          <NuxtLink to="/" class="brand__app">{{ site.appName }}</NuxtLink>
+        </template>
+      </div>
 
       <nav v-if="site.nav.length" aria-label="Principale" class="nav">
         <NuxtLink v-for="item in site.nav" :key="item.to" :to="item.to" class="nav__link">
@@ -45,8 +52,24 @@ const { site } = useAppConfig()
   margin-right: auto;
   font-weight: 700;
   letter-spacing: -0.01em;
+}
+
+.brand__home,
+.brand__app {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--color-text);
   text-decoration: none;
+}
+
+.brand__sep {
+  color: var(--color-border);
+  font-weight: 400;
+}
+
+.brand__app {
+  color: var(--color-accent);
 }
 
 .brand__logo {

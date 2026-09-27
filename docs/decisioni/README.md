@@ -12,3 +12,4 @@ Le decisioni non si riscrivono: se cambiano, se ne aggiunge una nuova che sostit
 | [0005](0005-tema-con-token-css.md)            | Tema con token CSS, senza framework UI     | Accettata |
 | [0006](0006-soundverse-al-posto-di-musica.md) | Soundverse al posto della sotto-app Musica | Accettata |
 | [0007](0007-protezione-solo-anteprime.md)     | Vercel Authentication solo sulle anteprime | Accettata |
+| [0008](0008-web-audio-senza-tone.md)          | Web Audio nativo, senza Tone.js            | Accettata |
