@@ -20,6 +20,9 @@ useSeoMeta({
       <StudioPanel title="Pad">
         <PadsPanel />
       </StudioPanel>
+      <StudioPanel title="Chop">
+        <ChopPanel />
+      </StudioPanel>
       <StudioPanel title="Synth">
         <SynthPanel />
       </StudioPanel>
