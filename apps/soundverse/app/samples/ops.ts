@@ -1,6 +1,7 @@
 import { SAMPLE_RATE } from '~/audio/constants'
 import { defaultEq, type EqSpec } from '~/eq/spec'
 import type { ParamDef } from '~/synth/spec'
+import { pitchShift, timeStretch } from './stretch'
 import { dbToGain } from '~/utils/scale'
 
 type Channels = Float32Array<ArrayBuffer>[]
@@ -15,6 +16,9 @@ export type SampleOp =
   | { type: 'fade'; fadeIn: number; fadeOut: number }
   | { type: 'speed'; rate: number }
   | { type: 'eq'; spec: EqSpec }
+  | { type: 'stretch'; factor: number }
+  | { type: 'pitch'; semitones: number }
+  | { type: 'tempo'; fromBpm: number; toBpm: number }
 
 export type SampleOpType = SampleOp['type']
 
@@ -27,6 +31,9 @@ export const opLabels: Record<SampleOpType, string> = {
   fade: 'Dissolvenze',
   speed: 'Velocità',
   eq: 'Equalizzatore',
+  stretch: 'Allunga (tempo)',
+  pitch: 'Intonazione',
+  tempo: 'Da BPM a BPM',
 }
 
 export const opParams = {
@@ -44,6 +51,24 @@ export const opParams = {
     fadeOut: { label: 'Fade out', unit: 's', min: 0, max: 10, step: 0.01, default: 0.1 },
   },
   eq: {},
+  stretch: {
+    factor: { label: 'Durata', unit: '×', min: 0.25, max: 4, log: true, step: 0.01, default: 1 },
+  },
+  pitch: {
+    semitones: {
+      label: 'Semitoni',
+      unit: 'st',
+      min: -24,
+      max: 24,
+      step: 1,
+      default: 0,
+      bipolar: true,
+    },
+  },
+  tempo: {
+    fromBpm: { label: 'Da', unit: '', min: 40, max: 240, step: 0.1, default: 120 },
+    toBpm: { label: 'A', unit: '', min: 40, max: 240, step: 0.1, default: 120 },
+  },
   speed: {
     rate: { label: 'Velocità', unit: '×', min: 0.25, max: 4, log: true, step: 0.01, default: 1 },
   },
@@ -127,6 +152,16 @@ function applyOp(channels: Channels, op: SampleOp): Channels {
 
     case 'speed':
       return channels.map((channel) => varispeed(channel, op.rate))
+
+    case 'stretch':
+      return timeStretch(channels, op.factor)
+
+    case 'pitch':
+      return pitchShift(channels, op.semitones)
+
+    case 'tempo':
+      // Più veloce = più corto: la durata si moltiplica per da/a.
+      return timeStretch(channels, op.fromBpm / op.toBpm)
 
     case 'eq':
       throw new Error("L'EQ passa da un OfflineAudioContext: usa applyChain")
