@@ -59,3 +59,26 @@ test('ogni elemento dell’header sta dentro lo schermo', async ({ page }) => {
     expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width)
   }
 })
+
+test('la barra degli strumenti porta a ognuno, anche a quelli fuori schermo', async ({ page }) => {
+  await page.goto('/')
+  const nav = page.getByRole('navigation', { name: 'Vai allo strumento' })
+  await expect(nav.getByRole('button')).toHaveText([
+    'Synth',
+    'Batteria',
+    'Campioni',
+    'Accordi',
+    'Pad',
+    'Chop',
+    'Registra',
+    'Mixer',
+    'MIDI',
+  ])
+  await nav.getByRole('button', { name: 'MIDI' }).click()
+  const midi = page.getByRole('region', { name: 'MIDI', exact: true })
+  await expect(midi).toBeInViewport()
+  await expect(nav.getByRole('button', { name: 'MIDI' })).toHaveAttribute('aria-current', 'true')
+
+  await nav.getByRole('button', { name: 'Synth' }).click()
+  await expect(page.getByRole('region', { name: 'Synth', exact: true })).toBeInViewport()
+})

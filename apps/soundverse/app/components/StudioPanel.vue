@@ -11,7 +11,7 @@ const id = useId()
 <template>
   <section class="panel" :aria-labelledby="id">
     <header class="panel__header">
-      <h2 :id="id" class="panel__title">{{ title }}</h2>
+      <h2 :id="id" class="panel__title" tabindex="-1">{{ title }}</h2>
     </header>
     <div class="panel__body">
       <slot>
