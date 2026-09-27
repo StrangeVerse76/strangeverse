@@ -16,8 +16,11 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@pinia/nuxt": "1.0.2",
     "@strangeverse/ui": "workspace:*",
+    "idb": "8.0.3",
     "nuxt": "4.5.2",
+    "pinia": "4.0.3",
     "vue": "3.5.43",
     "vue-router": "5.3.1"
   },

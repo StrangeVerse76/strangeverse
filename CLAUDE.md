@@ -63,6 +63,26 @@ docs/
 
 Si aggiunge una voce in `apps/portale/app/data/apps.ts`. Un'app `live` deve avere un `url` https, e i test unitari lo verificano.
 
+## Soundverse
+
+Studio audio tutto nel browser (ADR 0006, 0008). Il codice sta in `apps/soundverse/app/`:
+
+| Cartella      | Contenuto                                                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `audio/`      | Motore: `context.ts` (contesto live), `render.ts` (grafo e render offline), `decode.ts`, `wav.ts`, `peaks.ts`, `player.ts` |
+| `library/`    | Tipi dei clip, ricerca (`filter.ts`), salvataggio in IndexedDB (`db.ts`, con `idb`)                                        |
+| `stores/`     | Store Pinia (`library.ts`)                                                                                                 |
+| `components/` | `audio/` (waveform e controlli audio), `library/` (pannello della libreria), `StudioPanel`                                 |
+
+Regole (lezioni di Bragi, da rispettare in ogni pannello):
+
+- **Contesto audio solo in un gesto.** `unlockAudio()` si chiama in modo sincrono nel gestore del click, prima di qualunque `await`. Per decodificare si usa un `OfflineAudioContext`, che non richiede gesti.
+- **Un solo grafo.** Un suono si descrive con un `GraphBuilder` `(context, out, when)`, e lo stesso builder serve per l'ascolto dal vivo e per `renderOffline`. Mai due implementazioni della stessa spec.
+- **Ogni operazione crea un clip nuovo**, con la ricetta in `clip.recipe`. Per ogni nuovo pannello si aggiunge la sua variante all'unione `ClipRecipe`.
+- **Formato dei clip.** Tutto a 48 kHz, mono o stereo, salvato come WAV PCM a 24 bit con 512 picchi precalcolati.
+- **IndexedDB non clona i proxy di Vue.** Prima di salvare un oggetto preso dallo stato di Pinia si usa `structuredClone(toRaw(x))`.
+- **Nomi dei file.** I componenti in sottocartelle ripetono il prefisso nel nome del file (`library/LibraryPanel.vue` → `<LibraryPanel>`), come chiede la regola `vue/multi-word-component-names`.
+
 ## Convenzioni
 
 - **Lingua**: codice, nomi e messaggi di commit in inglese; issue, PR e documentazione in italiano.

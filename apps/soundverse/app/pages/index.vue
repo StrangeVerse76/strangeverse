@@ -22,7 +22,9 @@ useSeoMeta({
       <StudioPanel title="Campioni" :coming-in="11" />
     </div>
 
-    <StudioPanel title="Libreria" :coming-in="8" class="studio__library" />
+    <StudioPanel title="Libreria" class="studio__library">
+      <LibraryPanel />
+    </StudioPanel>
 
     <StudioPanel title="Timeline" :coming-in="12" class="studio__timeline" />
   </div>
