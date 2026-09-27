@@ -17,6 +17,9 @@ useSeoMeta({
     <h1 class="visually-hidden">Soundverse</h1>
 
     <div class="studio__rack" role="group" aria-label="Strumenti">
+      <StudioPanel title="Pad">
+        <PadsPanel />
+      </StudioPanel>
       <StudioPanel title="Synth">
         <SynthPanel />
       </StudioPanel>
