@@ -1,3 +1,4 @@
+import { toPlain } from '~/utils/plain'
 import { defineStore } from 'pinia'
 import { MAX_CHANNELS, PEAK_BUCKETS, SAMPLE_RATE } from '~/audio/constants'
 import type { Mp3Bitrate } from '~/audio/mp3-core'
@@ -23,6 +24,7 @@ function recipeBpm(recipe: ClipRecipe): number | null {
   if (recipe.type === 'drums') return recipe.pattern.bpm
   if (recipe.type === 'mix') return recipe.project.bpm
   if (recipe.type === 'chords') return recipe.spec.bpm
+  if (recipe.type === 'padPattern') return recipe.settings.bpm
   return null
 }
 
@@ -212,5 +214,5 @@ function saveFile(blob: Blob, name: string) {
 
 /** Copia senza proxy reattivi, salvabile in IndexedDB. */
 function plain(clip: Clip): Clip {
-  return structuredClone(toRaw(clip))
+  return toPlain(clip)
 }

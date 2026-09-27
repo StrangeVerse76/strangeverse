@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toPlain } from '~/utils/plain'
 import { SAMPLE_RATE } from '~/audio/constants'
 import { unlockAudio } from '~/audio/context'
 import { renderOffline } from '~/audio/render'
@@ -90,7 +91,7 @@ onBeforeUnmount(() => {
 async function save() {
   saving.value = true
   try {
-    const pattern = structuredClone(toRaw(drums.pattern))
+    const pattern = toPlain(drums.pattern)
     const rendered = await renderOffline(patternVoice(pattern))
     const length = Math.round(patternLength(pattern) * SAMPLE_RATE)
     await library.add({

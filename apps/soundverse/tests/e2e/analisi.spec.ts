@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { encodeWav } from '../../app/audio/wav'
+import { readStore } from './helpers/idb'
 
 const SR = 48_000
 
@@ -77,20 +78,16 @@ test('BPM e tonalità si correggono a mano, anche con ×2, e restano dopo il ric
   await expect(bpm).toHaveValue('174')
   await library(page).getByRole('combobox', { name: 'Tonalità del clip' }).selectOption('Re minore')
   // Il salvataggio in IndexedDB è asincrono: si ricarica solo quando i dati sono scritti davvero.
-  await page.waitForFunction(
-    () =>
-      new Promise<boolean>((resolve) => {
-        const open = indexedDB.open('soundverse')
-        open.onsuccess = () => {
-          const request = open.result.transaction('clips').objectStore('clips').getAll()
-          request.onsuccess = () => {
-            const clip = request.result.find((c: { name: string }) => c.name === 'loop')
-            open.result.close()
-            resolve(clip?.analysis?.bpm === 174 && clip?.analysis?.key === 'Re minore')
-          }
-        }
-      }),
-  )
+  await expect
+    .poll(async () => {
+      const clips = await readStore<{ name: string; analysis?: { bpm: number; key: string } }>(
+        page,
+        'clips',
+      )
+      const clip = clips.find((c) => c.name === 'loop')
+      return `${clip?.analysis?.bpm} ${clip?.analysis?.key}`
+    })
+    .toBe('174 Re minore')
 
   await page.reload()
   await expect(clipButton(page, 'loop')).toContainText('174 BPM · Re minore')
