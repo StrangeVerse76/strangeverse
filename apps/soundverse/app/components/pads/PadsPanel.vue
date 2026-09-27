@@ -18,6 +18,7 @@ import { useLibraryStore } from '~/stores/library'
 import { usePadsStore } from '~/stores/pads'
 import { level, levelLabels, levelText, pianoTune, type PadOverrides } from '~/pads/levels'
 import { usePadSequencer } from '~/pads/useSequencer'
+import { livePadBus } from '~/pads/bus'
 
 const DRAG_TYPE = 'application/x-soundverse-clip'
 /** Quanto resta acceso un pad dopo il colpo (ms), solo per l'occhio. */
@@ -76,7 +77,8 @@ async function trigger(index: number, velocity: number, overrides?: PadOverrides
   if (!pad?.clipId || !clipsById.value.has(pad.clipId)) return
   const buffer = await library.getBuffer(pad.clipId)
   const when = context.currentTime
-  const hit = playPadHit(context, master, { ...pad, ...overrides }, buffer, velocity, when)
+  const out = livePadBus(context, master, pads.mixer)
+  const hit = playPadHit(context, out, { ...pad, ...overrides }, buffer, velocity, when)
   mutes.add(pad.muteGroup, hit, when)
 }
 

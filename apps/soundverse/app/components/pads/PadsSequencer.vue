@@ -56,14 +56,16 @@ async function save() {
     const pattern = toPlain(pads.pattern)
     const settings = toPlain(pads.settings)
     const kitPads = toPlain(pads.kit.pads)
-    const rendered = await renderOffline(padPatternVoice(pattern, settings, kitPads, seq.buffers))
+    const rendered = await renderOffline(
+      padPatternVoice(pattern, settings, kitPads, seq.buffers, toPlain(pads.mixer)),
+    )
     const frames = Math.round(patternSeconds(pattern, settings) * SAMPLE_RATE)
     const channels = [0, 1].map((c) => foldTail(rendered.getChannelData(c), frames))
     await library.add({
       name: name.value,
       kind: 'drums',
       channels,
-      recipe: { type: 'padPattern', pattern, settings, pads: kitPads },
+      recipe: { type: 'padPattern', pattern, settings, pads: kitPads, mixer: toPlain(pads.mixer) },
     })
   } finally {
     saving.value = false

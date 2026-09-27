@@ -1,5 +1,16 @@
 import type { Voice } from '~/audio/render'
 import {
+  buildReturns,
+  buildStrip,
+  defaultReturns,
+  effectiveGain,
+  mixOf,
+  updateReturns,
+  updateStrip,
+  type ReturnNodes,
+  type StripNodes,
+} from '~/mixer/mixer'
+import {
   blockLength,
   fadeEvents,
   projectEnd,
@@ -16,13 +27,19 @@ export interface GainRegistry {
   master: GainNode | null
   tracks: Map<string, GainNode>
   placements: Map<string, GainNode>
+  strips: Map<string, StripNodes>
+  returns: ReturnNodes | null
 }
 
 export const emptyRegistry = (): GainRegistry => ({
   master: null,
   tracks: new Map(),
   placements: new Map(),
+  strips: new Map(),
+  returns: null,
 })
+
+const anySolo = (project: TimelineProject) => project.tracks.some((t) => mixOf(t.mix).solo)
 
 /**
  * Il grafo della timeline, uguale per l'ascolto e per il render:
@@ -47,12 +64,17 @@ export function timelineVoice(
       master.gain.value = project.master
       master.connect(out)
       registry.master = master
+      const returns = buildReturns(context, master, project.returns ?? defaultReturns(), when)
+      registry.returns = returns
+      const solo = anySolo(project)
 
+      // Ogni traccia: volume (con muto e solo) → pan → EQ → master, e dopo le mandate agli effetti.
       for (const track of project.tracks) {
+        const mix = mixOf(track.mix)
         const node = context.createGain()
-        node.gain.value = track.muted ? 0 : track.gain
-        node.connect(master)
+        node.gain.value = effectiveGain(track.gain, track.muted, mix.solo, solo)
         registry.tracks.set(track.id, node)
+        registry.strips.set(track.id, buildStrip(context, node, master, mix, returns))
       }
 
       for (const placement of project.placements) {
@@ -94,9 +116,15 @@ export function timelineVoice(
 export function applyLiveGains(registry: GainRegistry, project: TimelineProject, now: number) {
   const smooth = 0.01
   registry.master?.gain.setTargetAtTime(project.master, now, smooth)
+  const solo = anySolo(project)
   for (const track of project.tracks) {
-    registry.tracks.get(track.id)?.gain.setTargetAtTime(track.muted ? 0 : track.gain, now, smooth)
+    const mix = mixOf(track.mix)
+    const value = effectiveGain(track.gain, track.muted, mix.solo, solo)
+    registry.tracks.get(track.id)?.gain.setTargetAtTime(value, now, smooth)
+    const strip = registry.strips.get(track.id)
+    if (strip) updateStrip(strip, mix, now)
   }
+  if (registry.returns) updateReturns(registry.returns, project.returns ?? defaultReturns(), now)
   for (const placement of project.placements) {
     registry.placements.get(placement.id)?.gain.setTargetAtTime(placement.gain, now, smooth)
   }

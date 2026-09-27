@@ -1,5 +1,6 @@
 import type { ProgressionSpec } from '~/chords/progression'
 import type { DrumPattern } from '~/drums/pattern'
+import type { PadMixer } from '~/pads/bus'
 import type { Pad } from '~/pads/kit'
 import type { PadPattern, SequencerSettings } from '~/pads/pattern'
 import type { SampleOp } from '~/samples/ops'
@@ -20,7 +21,14 @@ export type ClipRecipe =
   | { type: 'sample'; sourceId: string; sourceName: string; ops: SampleOp[] }
   | { type: 'mix'; project: TimelineProject }
   | { type: 'chords'; spec: ProgressionSpec }
-  | { type: 'padPattern'; pattern: PadPattern; settings: SequencerSettings; pads: Pad[] }
+  | {
+      type: 'padPattern'
+      pattern: PadPattern
+      settings: SequencerSettings
+      pads: Pad[]
+      /** Il canale "Pad" del mixer al momento del salvataggio. Facoltativo. */
+      mixer?: PadMixer
+    }
 
 /** Metadati di un clip. L'audio (WAV) è salvato a parte, con lo stesso `id`. */
 export interface Clip {

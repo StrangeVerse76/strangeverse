@@ -1,4 +1,5 @@
 import type { Voice } from '~/audio/render'
+import { buildPadBus, defaultPadMixer, type PadMixer } from './bus'
 import { MuteGroups, playPadHit } from './hit'
 import type { Pad } from './kit'
 import {
@@ -25,6 +26,7 @@ export function padPatternVoice(
   settings: SequencerSettings,
   pads: Pad[],
   buffers: ReadonlyMap<string, AudioBuffer>,
+  mixer: PadMixer = defaultPadMixer(),
 ): Voice {
   const spb = 60 / settings.bpm
   const used = pattern.events.map((e) => pads[e.pad]?.clipId).filter((id): id is string => !!id)
@@ -32,7 +34,10 @@ export function padPatternVoice(
   return {
     duration: patternSeconds(pattern, settings) + tail,
     channels: 2,
-    build(context, out, when) {
+    build(context, busOut, when) {
+      // Lo stesso canale "Pad" del live: volume, pan, EQ e mandate.
+      const out = context.createGain()
+      buildPadBus(context, out, busOut, mixer, when)
       const mutes = new MuteGroups()
       for (const event of eventsBetween(pattern, 0, patternBeats(pattern))) {
         const pad = pads[event.pad]

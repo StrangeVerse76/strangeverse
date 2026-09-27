@@ -54,6 +54,8 @@ export class TimelineTransport {
     clearTimeout(this.endTimer)
     const out = this.out
     this.out = null
+    // Gli oscillatori di modulazione (chorus, flanger) girerebbero per sempre.
+    for (const lfo of this.registry.returns?.lfos ?? []) lfo.stop(this.context.currentTime + 0.05)
     if (out) {
       out.gain.setTargetAtTime(0, this.context.currentTime, 0.005)
       setTimeout(() => out.disconnect(), 50)
