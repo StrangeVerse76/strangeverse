@@ -449,11 +449,23 @@ vercel env pull .env.local
 
 `.vercel/` ed `.env*` devono essere in `.gitignore`.
 
-**A.7.3 Database Neon** 🧑 (Fase 5)
+**A.7.3 Database, audio e login** 🧑 (Fase 5, ADR 0011)
 
-1. Progetto Vercel → _Storage_ (o _Marketplace_) → **Neon** → _Create_ → piano gratuito, regione vicina (es. Europa).
-2. Collegarlo ai progetti che ne hanno bisogno; attivare la creazione di un **branch del database per i deploy di anteprima**.
-3. Le variabili di connessione vengono aggiunte da sole al progetto Vercel; in locale si recuperano con `vercel env pull`.
+Tutto nel progetto Vercel **`soundverse`**. Nessun segreto va scritto in chat o nel repo: si incolla solo nella dashboard.
+
+1. **Neon.** _Storage_ → _Create Database_ → **Neon** → piano **Free**, regione **Frankfurt (eu-central-1)**, nome `soundverse`.
+   Collegalo a `soundverse` per _Production_, _Preview_ e _Development_, e attiva **"Create database branch for deployment"** per le anteprime.
+2. **Blob.** _Storage_ → _Create_ → **Blob** → nome `soundverse-audio`, accesso **Private**, collegato a `soundverse` in tutti e tre gli ambienti.
+3. **App OAuth di GitHub (produzione).** GitHub → _Settings_ → _Developer settings_ → _OAuth Apps_ → _New OAuth App_:
+   - nome `Soundverse`, homepage `https://soundverse-strange-verse.vercel.app`;
+   - callback `https://soundverse-strange-verse.vercel.app/api/auth/callback/github`;
+   - poi _Generate a new client secret_.
+4. **App OAuth di GitHub (sviluppo).** Come la 3, con nome `Soundverse (locale)`, homepage `http://localhost:3000` e callback `http://localhost:3000/api/auth/callback/github`.
+5. **Variabili d'ambiente.** `soundverse` → _Settings_ → _Environment Variables_, tutte **Sensitive**:
+   - `GITHUB_CLIENT_ID` e `GITHUB_CLIENT_SECRET` dell'app 3, solo per _Production_;
+   - `GITHUB_CLIENT_ID` e `GITHUB_CLIENT_SECRET` dell'app 4, solo per _Development_;
+   - `BETTER_AUTH_SECRET` per _Production_ e (un altro valore) per _Development_: generalo nel Terminale con `openssl rand -base64 32`.
+6. **Regione delle funzioni.** `soundverse` → _Settings_ → _Functions_ → _Function Region_ → **Frankfurt (fra1)**, vicino al database.
 
 ✅ La PR di prova ha un commento/stato di Vercel con l'URL di anteprima; il merge aggiorna l'URL di produzione.
 
