@@ -1,5 +1,6 @@
 import { SAMPLE_RATE } from '~/audio/constants'
 import { spectrogram } from './fft'
+import { onsetCurve } from './onset'
 
 /** Sotto questa durata le stime non sono affidabili (lezione di Bragi). */
 export const MIN_ANALYSIS_SECONDS = 2
@@ -62,17 +63,7 @@ const ONSET_HOP = 512
  * a 120: evita di scambiare un brano per il doppio o la metà del suo tempo.
  */
 export function estimateBpm(mono: Float32Array): number | null {
-  const onset: number[] = []
-  let previous: Float64Array | null = null
-  spectrogram(mono, ONSET_SIZE, ONSET_HOP, (magnitudes) => {
-    const current = magnitudes.map((m) => Math.log1p(100 * m))
-    let flux = 0
-    if (previous)
-      for (let k = 0; k < current.length; k++)
-        flux += Math.max(0, (current[k] ?? 0) - (previous[k] ?? 0))
-    onset.push(flux)
-    previous = current
-  })
+  const onset = onsetCurve(mono, ONSET_SIZE, ONSET_HOP)
   if (onset.length < 16) return null
 
   const mean = onset.reduce((a, b) => a + b, 0) / onset.length
