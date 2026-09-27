@@ -18,7 +18,7 @@ Claude Code gestisce il ciclo completo, **dai sorgenti alla pubblicazione**; Pie
 
 1. **Un solo linguaggio**: TypeScript ovunque, frontend e backend.
 2. **Tutto passa da una Pull Request**: nessun push diretto su `main`.
-3. **Il merge è umano**: Claude prepara, verifica e propone; Pietro approva e fa merge.
+3. **Il merge è umano**: Claude prepara, verifica e propone; Pietro approva e fa merge. _Aggiornato: Claude fa il merge da solo quando la CI e le anteprime sono verdi, tranne che nei casi riservati ([ADR 0009](decisioni/0009-merge-autonomo.md))._
 4. **Ogni PR ha un'anteprima**: si prova sempre su un URL reale prima di andare in produzione.
 5. **Sotto-app isolate**: se una si rompe, le altre restano online.
 6. **Gratis per davvero**: si progetta entro i limiti dei piani free; il carico pesante resta nel browser.
@@ -130,7 +130,7 @@ Issue su GitHub  →  Claude Code crea branch  →  commit  →  Pull Request
 
 **Può**: creare branch, commit, push sui branch di lavoro, aprire e aggiornare PR, commentare issue, eseguire build/test in locale, leggere i log di Vercel, usare `vercel env pull` per lo sviluppo locale.
 
-**Non fa senza richiesta esplicita**: merge su `main`, push diretti su `main`, modifica delle variabili d'ambiente di produzione, eliminazione di repository/progetti/database, modifiche alle impostazioni degli account.
+**Non fa senza richiesta esplicita**: merge su `main` nei casi riservati dell'[ADR 0009](decisioni/0009-merge-autonomo.md), push diretti su `main`, modifica delle variabili d'ambiente di produzione, eliminazione di repository/progetti/database, modifiche alle impostazioni degli account.
 
 Queste regole non restano solo scritte: sono imposte su **due livelli**.
 

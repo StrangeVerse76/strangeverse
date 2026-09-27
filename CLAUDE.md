@@ -97,9 +97,25 @@ Regole (lezioni di Bragi, da rispettare in ogni pannello):
 
 **Può**: creare branch, fare commit, fare push sui branch di lavoro, aprire e aggiornare PR, commentare issue, eseguire build e test in locale, leggere i log di Vercel, usare `vercel env pull` per lo sviluppo locale.
 
-**Non fa senza una richiesta esplicita**: merge su `main`, push diretti su `main`, modifiche alle variabili d'ambiente di produzione, eliminazione di repository, progetti o database, modifiche alle impostazioni degli account.
+**Merge autonomo** (ADR 0009): Claude unisce da solo una PR, con `gh pr merge <n> --squash --delete-branch`, quando valgono **tutte** queste condizioni:
 
-I blocchi sono imposti in `.claude/settings.json` e, soprattutto, dal ruleset di GitHub su `main`. Non si leggono mai i file `.env*`.
+1. la CI è verde e le anteprime Vercel delle app toccate sono completate;
+2. l'anteprima è stata controllata: le pagine rispondono e, dove serve, gli e2e girano;
+3. la PR **non** rientra nei casi riservati qui sotto.
+
+Dopo il merge, Claude verifica che la produzione si sia aggiornata e lo dice a Pietro.
+
+**Casi riservati**, in cui il merge lo fa Pietro:
+
+- PR che toccano `.github/`, `.claude/settings.json`, la configurazione di Vercel o GitHub, protezioni o segreti;
+- aggiornamenti major di dipendenze;
+- PR che Pietro ha chiesto di provare prima.
+
+In questi casi Claude lo scrive nella descrizione della PR ("Merge: Pietro") e si ferma.
+
+**Non fa senza una richiesta esplicita**: push diretti su `main`, modifiche alle variabili d'ambiente di produzione, eliminazione di repository, progetti o database, modifiche alle impostazioni degli account.
+
+I blocchi sono imposti in `.claude/settings.json` e, soprattutto, dal ruleset di GitHub su `main`: anche col merge autonomo, niente arriva su `main` senza una PR con la CI verde. Non si leggono mai i file `.env*`.
 
 ## Checklist prima di aprire una PR
 
