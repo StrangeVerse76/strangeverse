@@ -6,8 +6,9 @@ import { bufferToChannels } from '~/audio/decode'
 import { computePeaks, peakLevel } from '~/audio/peaks'
 import { BufferPlayer } from '~/audio/player'
 import { kindLabels } from '~/library/types'
+import { eqGraph, type EqNodes } from '~/eq/graph'
 import {
-  applyOps,
+  applyChain,
   defaultOp,
   opLabels,
   opParams,
@@ -40,6 +41,11 @@ const result = shallowRef<Result | null>(null)
 const playing = ref<'source' | 'result' | null>(null)
 const position = ref(0)
 const creating = ref(false)
+/** Indice dell'operazione EQ che si sta ascoltando dal vivo, o null. */
+const eqPreview = ref<number | null>(null)
+let eqSource: AudioBufferSourceNode | null = null
+let eqNodes: EqNodes | null = null
+let eqOut: AudioNode | null = null
 const dragOver = ref(false)
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 let sourceChannels: Float32Array[] | null = null
@@ -111,16 +117,17 @@ function tick() {
 }
 
 function stop() {
+  stopEq()
   player.stop()
   cancelAnimationFrame(frame)
   playing.value = null
   position.value = 0
 }
 
-function computeResult(): Result | null {
+async function computeResult(): Promise<Result | null> {
   if (!sourceChannels) return null
   if (result.value) return result.value
-  const channels = applyOps(sourceChannels, toRaw(ops.value))
+  const channels = await applyChain(sourceChannels, structuredClone(toRaw(ops.value)))
   const length = channels[0]?.length ?? 0
   const computed: Result = {
     channels,
@@ -149,13 +156,13 @@ function toggleSource() {
   else void playSource()
 }
 
-function toggleResult() {
+async function toggleResult() {
   if (playing.value === 'result') {
     stop()
     return
   }
   const { context, master } = unlockAudio()
-  const computed = computeResult()
+  const computed = await computeResult()
   if (!computed) return
   const buffer = context.createBuffer(
     computed.channels.length,
@@ -192,7 +199,7 @@ function addOp() {
 
 async function create() {
   const clip = source.value
-  const computed = computeResult()
+  const computed = await computeResult()
   if (!clip || !computed) return
   creating.value = true
   try {
@@ -211,6 +218,55 @@ async function create() {
     creating.value = false
   }
 }
+
+// --- EQ dal vivo: la sorgente in loop attraverso lo stesso grafo del render ---
+
+function stopEq() {
+  eqSource?.stop()
+  eqSource?.disconnect()
+  eqNodes?.output.disconnect()
+  eqSource = null
+  eqNodes = null
+  eqPreview.value = null
+}
+
+/** I filtri IIR non si ricalcolano: a ogni modifica si costruisce un grafo nuovo e si scambia. */
+function rebuildEq() {
+  const index = eqPreview.value
+  const op = index === null ? null : ops.value[index]
+  if (!eqSource || !eqOut || op?.type !== 'eq') return
+  const next = eqGraph(eqSource.context, structuredClone(toRaw(op.spec)))
+  next.output.connect(eqOut)
+  eqSource.disconnect()
+  eqSource.connect(next.input)
+  eqNodes?.output.disconnect()
+  eqNodes = next
+}
+
+async function toggleEq(index: number) {
+  if (eqPreview.value === index) {
+    stopEq()
+    return
+  }
+  const clip = source.value
+  if (!clip) return
+  const { context, master } = unlockAudio()
+  stop()
+  const buffer = await library.getBuffer(clip.id)
+  eqSource = context.createBufferSource()
+  eqSource.buffer = buffer
+  eqSource.loop = true
+  eqOut = master
+  eqPreview.value = index
+  rebuildEq()
+  eqSource.start()
+}
+
+watch(
+  () => (eqPreview.value === null ? null : ops.value[eqPreview.value]),
+  () => rebuildEq(),
+  { deep: true },
+)
 
 async function importFiles(files: FileList | null | undefined) {
   if (!files?.length) return
@@ -318,6 +374,12 @@ async function onDrop(event: DragEvent) {
                 ×
               </button>
             </div>
+            <template v-if="op.type === 'eq'">
+              <EqEditor v-model="op.spec" :mono="source.channels === 1" />
+              <button type="button" class="button button--ghost button--small" @click="toggleEq(i)">
+                {{ eqPreview === i ? 'Ferma ascolto EQ' : 'Ascolta con EQ' }}
+              </button>
+            </template>
             <div v-if="Object.keys(defsOf(op)).length" class="row">
               <ControlKnob
                 v-for="(def, key) in defsOf(op)"
