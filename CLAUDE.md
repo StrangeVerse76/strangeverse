@@ -48,6 +48,7 @@ docs/
 
 ### Layer `@strangeverse/ui`
 
+- Il `build` del layer esegue solo `nuxt prepare`: genera `packages/ui/.nuxt/`, che serve alla build delle app (Vite legge il tsconfig del layer). Turborepo lo lancia prima delle app grazie a `dependsOn: ["^build"]`.
 - Ogni app Nuxt lo estende con `extends: ['@strangeverse/ui']` e ne eredita `app.vue`, `error.vue` (404), il layout `default`, `SiteHeader`, `SiteFooter`, `ThemeToggle`, `SiteLogo`, il CSS globale e la favicon.
 - Il tema è fatto di token CSS in `packages/ui/app/assets/css/main.css`. Il predefinito è lo scuro; con la classe `.light` su `<html>` si passa al chiaro, gestito da `@nuxtjs/color-mode`. I componenti usano solo le variabili (`--color-*`, `--space-*`, `--text-*`, `--radius-*`), mai colori scritti a mano.
 - Ogni app si configura nel proprio `app/app.config.ts`, con `site.nav` per il menu e `site.homeUrl` per l'indirizzo del portale (da impostare nelle sotto-app).
