@@ -32,13 +32,21 @@ function addToTimeline(clip: Clip) {
   timeline.addPlacement(clip.id, target.id, end)
 }
 
-// Se un clip sparisce dalla libreria, spariscono anche i suoi blocchi nella timeline.
+// Se un clip viene eliminato, spariscono anche i suoi blocchi nel progetto aperto.
+// Solo quelli appena eliminati: un progetto aperto può citare clip mancanti da tempo, e li mostra.
 watch(
   () => library.clips.map((c) => c.id),
-  (ids) => {
-    if (library.status === 'ready') timeline.prune(new Set(ids))
+  (ids, previous) => {
+    if (library.status !== 'ready' || !previous) return
+    const current = new Set(ids)
+    const removed = new Set(previous.filter((id) => !current.has(id)))
+    if (removed.size) timeline.removeClips(removed)
   },
 )
+
+function openAsProject(clip: Clip) {
+  if (clip.recipe.type === 'mix') void timeline.openFromMix(clip.recipe.project, clip.name)
+}
 const player = new BufferPlayer()
 const playingId = ref<string | null>(null)
 const position = ref(0)
@@ -252,6 +260,14 @@ async function onDrop(event: DragEvent) {
         </button>
         <button type="button" class="button button--ghost" @click="addToTimeline(library.selected)">
           Aggiungi alla timeline
+        </button>
+        <button
+          v-if="library.selected.recipe.type === 'mix'"
+          type="button"
+          class="button button--ghost"
+          @click="openAsProject(library.selected)"
+        >
+          Apri come progetto
         </button>
         <button
           type="button"

@@ -132,7 +132,7 @@ test('se la sorgente viene eliminata, il pannello si svuota', async ({ page }) =
   await loadTone(page, 'da-eliminare', 1)
   await page
     .getByRole('region', { name: 'Clip selezionato' })
-    .getByRole('button', { name: 'Elimina' })
+    .getByRole('button', { name: 'Elimina', exact: true })
     .click()
   await expect(samples(page).getByText('Scegli un clip della libreria come sorgente')).toBeVisible()
 })

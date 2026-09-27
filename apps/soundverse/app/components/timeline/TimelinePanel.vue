@@ -45,11 +45,53 @@ const playLabel = computed(() =>
   state.value === 'playing' ? 'Pausa' : state.value === 'paused' ? 'Riprendi' : 'Play',
 )
 
-const clipName = (p: Placement) => clipsById.value.get(p.clipId)?.name ?? '?'
+const isMissing = (p: Placement) => !clipsById.value.has(p.clipId)
+const clipName = (p: Placement) => clipsById.value.get(p.clipId)?.name ?? 'Clip mancante'
+/** Larghezza di comodo per i blocchi di clip mancanti, che non hanno una durata nota. */
+const MISSING_SECONDS = 1
 const blockStyle = (p: Placement) => ({
   left: `${p.start * timeline.zoom}px`,
-  width: `${Math.max(4, blockLength(p, durations.value) * timeline.zoom)}px`,
+  width: `${Math.max(4, (isMissing(p) ? MISSING_SECONDS : blockLength(p, durations.value)) * timeline.zoom)}px`,
 })
+const missingCount = computed(() => project.value.placements.filter(isMissing).length)
+const confirmingDelete = ref(false)
+
+function removeMissing() {
+  timeline.removeClips(new Set(project.value.placements.filter(isMissing).map((p) => p.clipId)))
+}
+
+async function deleteProject() {
+  if (!confirmingDelete.value) {
+    confirmingDelete.value = true
+    return
+  }
+  confirmingDelete.value = false
+  stop()
+  await timeline.deleteCurrent()
+}
+
+async function onOpenProject(event: Event) {
+  stop()
+  await timeline.open((event.target as HTMLSelectElement).value)
+}
+
+onMounted(() => timeline.load())
+
+// Salvataggio automatico di ogni modifica, con una breve attesa.
+watch(
+  () => [timeline.project, timeline.projectName],
+  () => timeline.scheduleSave(),
+  { deep: true },
+)
+
+// Cambiando progetto si ferma quello che suona.
+watch(
+  () => timeline.projectId,
+  () => {
+    stop()
+    confirmingDelete.value = false
+  },
+)
 
 function follow() {
   position.value = transport?.position() ?? cursor.value
@@ -58,7 +100,9 @@ function follow() {
 
 /** Decodifica tutti i clip usati, prima di fissare il tempo di partenza. */
 async function loadBuffers() {
-  const ids = [...new Set(project.value.placements.map((p) => p.clipId))]
+  const ids = [...new Set(project.value.placements.map((p) => p.clipId))].filter((id) =>
+    clipsById.value.has(id),
+  )
   const entries = await Promise.all(
     ids.map(async (id) => [id, await library.getBuffer(id)] as const),
   )
@@ -232,6 +276,51 @@ async function render() {
 
 <template>
   <div class="timeline">
+    <div class="projects" role="group" aria-label="Progetto">
+      <select
+        class="field"
+        aria-label="Apri progetto"
+        :value="timeline.projectId"
+        @change="onOpenProject"
+      >
+        <option v-for="p in timeline.sortedProjects" :key="p.id" :value="p.id">
+          {{ p.name }}
+        </option>
+      </select>
+      <input
+        v-model="timeline.projectName"
+        class="field projects__name"
+        aria-label="Nome del progetto"
+      />
+      <button
+        type="button"
+        class="button button--ghost button--small"
+        @click="timeline.newProject()"
+      >
+        Nuovo
+      </button>
+      <button
+        type="button"
+        class="button button--ghost button--small"
+        @click="timeline.duplicate()"
+      >
+        Duplica
+      </button>
+      <button
+        type="button"
+        class="button button--ghost button--danger button--small"
+        @click="deleteProject"
+      >
+        {{ confirmingDelete ? 'Conferma eliminazione' : 'Elimina progetto' }}
+      </button>
+    </div>
+
+    <p v-if="missingCount" class="missing" role="alert">
+      {{ missingCount === 1 ? '1 blocco usa' : `${missingCount} blocchi usano` }} clip non più in
+      libreria: non suonano.
+      <button type="button" class="link-button" @click="removeMissing">Rimuovili</button>
+    </p>
+
     <div class="toolbar">
       <div class="transport" role="group" aria-label="Trasporto">
         <button type="button" class="chip" aria-label="Torna all'inizio" @click="toStart">⏮</button>
@@ -321,6 +410,7 @@ async function render() {
               type="button"
               role="listitem"
               class="block"
+              :class="{ 'block--missing': isMissing(p) }"
               :style="blockStyle(p)"
               :aria-pressed="timeline.selectedId === p.id"
               :aria-label="`${clipName(p)} a ${formatDuration(p.start)}`"
@@ -392,6 +482,7 @@ async function render() {
   gap: var(--space-3);
 }
 
+.projects,
 .toolbar,
 .transport,
 .actions,
@@ -404,6 +495,26 @@ async function render() {
 
 .toolbar {
   gap: var(--space-3);
+}
+
+.projects__name {
+  flex: 1 1 10rem;
+  max-width: 18rem;
+}
+
+.missing {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+.link-button {
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .clock {
@@ -527,6 +638,13 @@ async function render() {
 .block[aria-pressed='true'] {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.block--missing {
+  border-style: dashed;
+  border-color: var(--color-danger);
+  background: transparent;
+  color: var(--color-danger);
 }
 
 .block__name {
