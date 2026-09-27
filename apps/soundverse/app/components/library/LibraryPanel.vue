@@ -3,11 +3,42 @@ import { unlockAudio } from '~/audio/context'
 import { BufferPlayer } from '~/audio/player'
 import { kindLabels, type Clip } from '~/library/types'
 import { useLibraryStore } from '~/stores/library'
+import { useTimelineStore } from '~/stores/timeline'
+import { blockLength } from '~/timeline/model'
 import { formatDuration } from '~/utils/format'
 
 const UNDO_SECONDS = 10
 
 const library = useLibraryStore()
+const timeline = useTimelineStore()
+
+/** Tipo MIME del trascinamento verso la timeline. */
+const DRAG_TYPE = 'application/x-soundverse-clip'
+
+function onDragStart(event: DragEvent, clip: Clip) {
+  event.dataTransfer?.setData(DRAG_TYPE, clip.id)
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'copy'
+}
+
+/** Alternativa da tastiera al trascinamento: in coda alla prima traccia. */
+function addToTimeline(clip: Clip) {
+  if (!timeline.project.tracks.length) timeline.addTrack()
+  const target = timeline.project.tracks[0]
+  if (!target) return
+  const durations = new Map(library.clips.map((c) => [c.id, c.duration]))
+  const end = timeline.project.placements
+    .filter((p) => p.trackId === target.id)
+    .reduce((max, p) => Math.max(max, p.start + blockLength(p, durations)), 0)
+  timeline.addPlacement(clip.id, target.id, end)
+}
+
+// Se un clip sparisce dalla libreria, spariscono anche i suoi blocchi nella timeline.
+watch(
+  () => library.clips.map((c) => c.id),
+  (ids) => {
+    if (library.status === 'ready') timeline.prune(new Set(ids))
+  },
+)
 const player = new BufferPlayer()
 const playingId = ref<string | null>(null)
 const position = ref(0)
@@ -182,8 +213,10 @@ async function onDrop(event: DragEvent) {
           v-else
           type="button"
           class="clip"
+          draggable="true"
           :aria-pressed="clip.id === library.selectedId"
           @click="library.select(clip.id)"
+          @dragstart="onDragStart($event, clip)"
           @dblclick="startRename(clip)"
           @keydown.f2.prevent="startRename(clip)"
         >
@@ -216,6 +249,9 @@ async function onDrop(event: DragEvent) {
           @click="library.download(library.selected.id)"
         >
           Scarica WAV
+        </button>
+        <button type="button" class="button button--ghost" @click="addToTimeline(library.selected)">
+          Aggiungi alla timeline
         </button>
         <button
           type="button"

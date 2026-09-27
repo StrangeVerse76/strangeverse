@@ -9,6 +9,8 @@ const props = defineProps<{
   label?: string
   /** Nome per i lettori di schermo, se serve più preciso dell'etichetta (es. "Volume Cassa"). */
   ariaLabel?: string
+  /** Solo la manopola, senza etichetta e valore visibili (restano per i lettori di schermo). */
+  compact?: boolean
 }>()
 
 const model = defineModel<number>({ required: true })
@@ -103,7 +105,11 @@ const tip = computed(() => point(position.value))
 </script>
 
 <template>
-  <div class="knob">
+  <div
+    class="knob"
+    :class="{ 'knob--compact': compact }"
+    :title="compact ? `${name}: ${text}` : undefined"
+  >
     <div
       class="knob__dial"
       role="slider"
@@ -127,8 +133,10 @@ const tip = computed(() => point(position.value))
         <line x1="20" y1="20" :x2="tip.x" :y2="tip.y" class="knob__pointer" />
       </svg>
     </div>
-    <span class="knob__label">{{ name }}</span>
-    <span class="knob__text">{{ text }}</span>
+    <template v-if="!compact">
+      <span class="knob__label">{{ name }}</span>
+      <span class="knob__text">{{ text }}</span>
+    </template>
   </div>
 </template>
 
@@ -139,6 +147,10 @@ const tip = computed(() => point(position.value))
   gap: 0.1rem;
   min-width: 4rem;
   user-select: none;
+}
+
+.knob--compact {
+  min-width: 0;
 }
 
 .knob__dial {
