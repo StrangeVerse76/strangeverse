@@ -99,6 +99,8 @@ test('un progetto con clip non più in libreria si apre e segnala i blocchi manc
   // Il clip si elimina mentre è aperto un altro progetto.
   await clipButton(page, 'effimero').click()
   await library(page).getByRole('button', { name: 'Elimina', exact: true }).click()
+  // L'eliminazione è asincrona (IndexedDB): si cambia progetto solo quando è finita.
+  await expect(clipButton(page, 'effimero')).toHaveCount(0)
   await projectSelect(page).selectOption({ label: 'Progetto 1' })
 
   await expect(timeline(page).getByRole('alert')).toContainText(
