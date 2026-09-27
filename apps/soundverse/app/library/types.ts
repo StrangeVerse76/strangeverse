@@ -1,4 +1,5 @@
 import type { DrumPattern } from '~/drums/pattern'
+import type { SampleOp } from '~/samples/ops'
 import type { SynthSpec } from '~/synth/spec'
 
 export type ClipKind = 'synth' | 'drums' | 'sample' | 'mix'
@@ -11,6 +12,7 @@ export type ClipRecipe =
   | { type: 'import'; fileName: string }
   | { type: 'synth'; spec: SynthSpec }
   | { type: 'drums'; pattern: DrumPattern }
+  | { type: 'sample'; sourceId: string; sourceName: string; ops: SampleOp[] }
 
 /** Metadati di un clip. L'audio (WAV) è salvato a parte, con lo stesso `id`. */
 export interface Clip {

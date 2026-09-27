@@ -23,7 +23,9 @@ useSeoMeta({
       <StudioPanel title="Batteria">
         <DrumsPanel />
       </StudioPanel>
-      <StudioPanel title="Campioni" :coming-in="11" />
+      <StudioPanel title="Campioni">
+        <SamplePanel />
+      </StudioPanel>
     </div>
 
     <StudioPanel title="Libreria" class="studio__library">
