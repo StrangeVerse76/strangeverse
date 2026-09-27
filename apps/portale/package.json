@@ -1,0 +1,31 @@
+{
+  "name": "@strangeverse/portale",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Portale di StrangeVerse: home, catalogo delle app, chi sono",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@strangeverse/ui": "workspace:*",
+    "nuxt": "4.5.2",
+    "vue": "3.5.43",
+    "vue-router": "5.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@strangeverse/config": "workspace:*",
+    "eslint": "10.11.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.2",
+    "vue-tsc": "3.3.11"
+  }
+}
