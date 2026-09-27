@@ -93,6 +93,19 @@ Il job si chiama **`CI`**: è il controllo obbligatorio nel ruleset di `main`.
 
 Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-failed`.
 
+## Deploy (Vercel)
+
+- Un progetto Vercel per app, tutti dallo stesso repo (team `strange-verse`, piano Hobby). Il progetto si chiama `strangeverse`, ha Root Directory `apps/portale` e la produzione è su https://strangeverse-strange-verse.vercel.app.
+- Ogni PR ha un deploy di **anteprima**; il merge su `main` va in **produzione**. Claude non lancia mai deploy di produzione dalla CLI.
+- `apps/<app>/vercel.json` usa `turbo-ignore` come _ignored build step_: se un commit non tocca l'app né i pacchetti da cui dipende, Vercel salta la build. La versione di `turbo-ignore` va tenuta uguale a quella di `turbo`.
+- Collegamento locale, una volta per cartella: `cd apps/<app> && vercel link` e poi `vercel env pull .env.local`. `.vercel/` e `.env*` sono ignorati da Git, e i file `.env*` non si leggono mai.
+- Leggere i deploy:
+  - `vercel ls <progetto>` elenca i deploy e il loro stato;
+  - `vercel inspect <url> --logs` mostra i log di build;
+  - `vercel logs <url>` mostra i log di runtime;
+  - `gh pr checks <n>` include lo stato di Vercel sulla PR.
+- Le anteprime sono protette da _Vercel Authentication_: per i test automatici serve il bypass (vedi `vercel curl`), oppure si testa la produzione.
+
 ## Vincoli dei piani gratuiti
 
 - **Vercel Hobby**: solo uso personale e non commerciale; funzioni brevi (fino a 60 s); una build alla volta; limiti mensili di invocazioni e traffico. Le API restano leggere e l'audio resta nel browser.
@@ -103,7 +116,7 @@ Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-faile
 ## Stato e note operative
 
 - Fasi 1–2 completate; ruleset `protezione-main` attivo. Fase 4 (portale e layer UI) in corso.
-- Fase 3 in attesa: l'account Vercel deve essere verificato dal supporto Vercel.
+- Fase 3 in corso: il progetto Vercel `strangeverse` è collegato al repo.
 - TypeScript è fermo alla 6.0 (ADR 0002). pnpm rifiuta le versioni pubblicate da meno di un giorno (ADR 0003).
 - pnpm blocca gli script di installazione dei pacchetti: quelli autorizzati sono in `allowBuilds` di `pnpm-workspace.yaml`. Oggi c'è solo `esbuild`.
 
