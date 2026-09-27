@@ -83,7 +83,7 @@ describe('eventsBetween e stepsBetween', () => {
 describe('PadSequencer', () => {
   function setup(
     patterns: PadPattern[],
-    options: { repeat?: Map<number, number>; metronome?: boolean } = {},
+    options: { repeat?: Map<string, { pad: number; velocity: number }>; metronome?: boolean } = {},
   ) {
     const { fake, context } = fakeContext()
     const clock = fake as unknown as { currentTime: number }
@@ -152,7 +152,9 @@ describe('PadSequencer', () => {
   })
 
   it('Note Repeat: i pad tenuti suonano a ogni passo della griglia', () => {
-    const { seq, run, starts } = setup([pattern([])], { repeat: new Map([[0, 1]]) })
+    const { seq, run, starts } = setup([pattern([])], {
+      repeat: new Map([['0', { pad: 0, velocity: 1 }]]),
+    })
     seq.start()
     run(0.6)
     // 1/16 a 120 BPM = 0,125 s.

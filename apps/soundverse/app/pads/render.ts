@@ -39,7 +39,8 @@ export function padPatternVoice(
         const buffer = pad?.clipId ? buffers.get(pad.clipId) : undefined
         if (!pad || !buffer) continue
         const at = when + (event.beat + swingDelay(event.beat, settings.grid, settings.swing)) * spb
-        mutes.add(pad.muteGroup, playPadHit(context, out, pad, buffer, event.velocity, at), at)
+        const played = { ...pad, ...event.overrides }
+        mutes.add(pad.muteGroup, playPadHit(context, out, played, buffer, event.velocity, at), at)
       }
     },
   }

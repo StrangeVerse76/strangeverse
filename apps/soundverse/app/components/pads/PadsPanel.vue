@@ -16,6 +16,7 @@ import {
 } from '~/pads/kit'
 import { useLibraryStore } from '~/stores/library'
 import { usePadsStore } from '~/stores/pads'
+import { level, levelLabels, levelText, pianoTune, type PadOverrides } from '~/pads/levels'
 import { usePadSequencer } from '~/pads/useSequencer'
 
 const DRAG_TYPE = 'application/x-soundverse-clip'
@@ -64,15 +65,64 @@ watch(
 )
 
 /** Suona un pad. Il contesto si sblocca in modo sincrono, poi si attende il buffer. */
-async function trigger(index: number, velocity: number) {
+/**
+ * Suona un pad, eventualmente con varianti (16 Levels, piano). Il contesto si sblocca in modo
+ * sincrono, poi si attende il buffer. `flashAt` è il pad da illuminare nella griglia.
+ */
+async function trigger(index: number, velocity: number, overrides?: PadOverrides, flashAt = index) {
   const { context, master } = unlockAudio()
-  flash(index)
+  flash(flashAt)
   const pad = pads.kit.pads[index]
   if (!pad?.clipId || !clipsById.value.has(pad.clipId)) return
   const buffer = await library.getBuffer(pad.clipId)
   const when = context.currentTime
-  const hit = playPadHit(context, master, pad, buffer, velocity, when)
+  const hit = playPadHit(context, master, { ...pad, ...overrides }, buffer, velocity, when)
   mutes.add(pad.muteGroup, hit, when)
+}
+
+const levelSourcePad = computed(() => pads.kit.pads[pads.levelSource])
+const levelDuration = computed(() => {
+  const id = levelSourcePad.value?.clipId
+  return (id && clipsById.value.get(id)?.duration) || 1
+})
+const levelAt = (n: number) =>
+  levelSourcePad.value
+    ? level(levelSourcePad.value, pads.levelParam, n, levelDuration.value)
+    : { velocity: 1, overrides: {} }
+
+/** Un pad della griglia premuto (numero 1..16 nel banco mostrato), in entrambe le modalità. */
+function press(n: number, touchVelocity: number) {
+  const gridIndex = padIndex(pads.bank, n)
+  if (pads.playMode === 'levels') {
+    const { velocity, overrides } = levelAt(n)
+    const v = pads.levelParam === 'velocity' ? velocity : touchVelocity
+    if (seq.padDown(pads.levelSource, v, overrides, `L${n}`)) {
+      void trigger(pads.levelSource, v, overrides, gridIndex)
+    } else flash(gridIndex)
+    return
+  }
+  pads.selected = gridIndex
+  if (seq.padDown(gridIndex, touchVelocity)) void trigger(gridIndex, touchVelocity)
+  else flash(gridIndex)
+}
+
+function release(n: number) {
+  seq.padUp(pads.playMode === 'levels' ? `L${n}` : padIndex(pads.bank, n))
+}
+
+function setPlayMode(mode: 'pads' | 'levels') {
+  if (mode === 'levels') pads.levelSource = pads.selected
+  pads.playMode = mode
+}
+
+/** Tastiera a piano: il pad selezionato a una nota (Do centrale = tono originale). */
+function playNote(midi: number) {
+  const pad = pads.kit.pads[pads.selected]
+  if (!pad) return
+  const overrides = { tune: pianoTune(pad, midi) }
+  if (seq.padDown(pads.selected, 1, overrides, `P${midi}`)) {
+    void trigger(pads.selected, 1, overrides)
+  }
 }
 
 function flash(index: number) {
@@ -85,15 +135,13 @@ function flash(index: number) {
   }, FLASH_MS)
 }
 
-function onPadDown(event: PointerEvent, index: number) {
+function onPadDown(event: PointerEvent, n: number) {
   const target = event.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
   const velocity = pads.fullVelocity
     ? 1
     : velocityFromPosition(event.clientY - rect.top, rect.height)
-  pads.selected = index
-  if (seq.padDown(index, velocity)) void trigger(index, velocity)
-  else flash(index)
+  press(n, velocity)
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -103,15 +151,12 @@ function onKeydown(event: KeyboardEvent) {
   const number = padNumberForKey(event.key)
   if (number === null) return
   event.preventDefault()
-  const index = padIndex(pads.bank, number)
-  pads.selected = index
-  if (seq.padDown(index, 1)) void trigger(index, 1)
-  else flash(index)
+  press(number, 1)
 }
 
 function onKeyup(event: KeyboardEvent) {
   const number = padNumberForKey(event.key)
-  if (number !== null) seq.padUp(padIndex(pads.bank, number))
+  if (number !== null) release(number)
 }
 
 function onDrop(event: DragEvent, index: number) {
@@ -167,6 +212,35 @@ async function onOpenKit(event: Event) {
       </label>
     </div>
 
+    <div class="row">
+      <div class="banks" role="group" aria-label="Modalità della griglia">
+        <button
+          type="button"
+          class="chip chip--wide"
+          :aria-pressed="pads.playMode === 'pads'"
+          @click="setPlayMode('pads')"
+        >
+          Pad
+        </button>
+        <button
+          type="button"
+          class="chip chip--wide"
+          :aria-pressed="pads.playMode === 'levels'"
+          @click="setPlayMode('levels')"
+        >
+          16 Levels
+        </button>
+      </div>
+      <template v-if="pads.playMode === 'levels'">
+        <select v-model="pads.levelParam" class="field" aria-label="Parametro dei livelli">
+          <option v-for="(label, key) in levelLabels" :key="key" :value="key">{{ label }}</option>
+        </select>
+        <span class="hint"
+          >da {{ padName(pads.levelSource) }} · {{ clipName(levelSourcePad) }}</span
+        >
+      </template>
+    </div>
+
     <div class="grid" role="group" :aria-label="`Pad del banco ${pads.bank}`">
       <button
         v-for="n in gridOrder"
@@ -179,19 +253,29 @@ async function onOpenKit(event: Event) {
           'pad--selected': pads.selected === padIndex(pads.bank, n),
           'pad--drop': dropTarget === padIndex(pads.bank, n),
         }"
-        :aria-label="`Pad ${pads.bank}${n}: ${clipName(pads.kit.pads[padIndex(pads.bank, n)])}`"
+        :aria-label="
+          pads.playMode === 'levels'
+            ? `Livello ${n}: ${levelText(pads.levelParam, levelAt(n))}`
+            : `Pad ${pads.bank}${n}: ${clipName(pads.kit.pads[padIndex(pads.bank, n)])}`
+        "
         :data-hits="hitCounts.get(padIndex(pads.bank, n)) ?? 0"
-        @pointerdown="onPadDown($event, padIndex(pads.bank, n))"
-        @pointerup="seq.padUp(padIndex(pads.bank, n))"
-        @pointerleave="seq.padUp(padIndex(pads.bank, n))"
-        @pointercancel="seq.padUp(padIndex(pads.bank, n))"
-        @keydown.enter.prevent="trigger(padIndex(pads.bank, n), 1)"
+        @pointerdown="onPadDown($event, n)"
+        @pointerup="release(n)"
+        @pointerleave="release(n)"
+        @pointercancel="release(n)"
+        @keydown.enter.prevent="press(n, 1)"
         @dragover="onDragOver($event, padIndex(pads.bank, n))"
         @dragleave="dropTarget = null"
         @drop.prevent="onDrop($event, padIndex(pads.bank, n))"
       >
         <span class="pad__number">{{ pads.bank }}{{ n }}</span>
-        <span class="pad__clip">{{ clipName(pads.kit.pads[padIndex(pads.bank, n)]) }}</span>
+        <span class="pad__clip">
+          {{
+            pads.playMode === 'levels'
+              ? levelText(pads.levelParam, levelAt(n))
+              : clipName(pads.kit.pads[padIndex(pads.bank, n)])
+          }}
+        </span>
         <kbd class="pad__key">{{ keyForPad(n) }}</kbd>
       </button>
     </div>
@@ -228,6 +312,8 @@ async function onOpenKit(event: Event) {
         </label>
       </div>
     </section>
+
+    <PadsPiano :octave="pads.pianoOctave" @note="playNote" @octave="pads.pianoOctave = $event" />
 
     <PadsSequencer />
 
@@ -269,6 +355,10 @@ async function onOpenKit(event: Event) {
   color: var(--color-text);
   font-weight: 700;
   cursor: pointer;
+}
+
+.chip--wide {
+  padding: 0 var(--space-3);
 }
 
 .chip[aria-pressed='true'] {
