@@ -33,8 +33,9 @@ async function loadTone(page: Page, name = 'tono', channels: 1 | 2 = 2) {
 /** Trascina sulla forma d'onda della sorgente da una frazione all'altra della larghezza. */
 async function dragOnWaveform(page: Page, from: number, to: number) {
   const wave = samples(page).getByRole('img', { name: /Forma d'onda della sorgente/ })
-  // Il pannello sta nel rack che scorre in orizzontale: va portato in vista, come farebbe una persona.
-  await wave.scrollIntoViewIfNeeded()
+  // Il pannello sta nel rack che scorre in orizzontale: va portato in vista per intero, come farebbe
+  // una persona con la barra degli strumenti (scrollIntoViewIfNeeded si ferma se è visibile a metà).
+  await wave.evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'start' }))
   const box = await wave.boundingBox()
   if (!box) throw new Error('forma d’onda non visibile')
   const y = box.y + box.height / 2
