@@ -87,6 +87,8 @@ Regole (lezioni di Bragi, da rispettare in ogni pannello):
 - **Batteria.** Voci in `drums/voices.ts` (ognuna è una spec del synth), pattern e tempi in `drums/pattern.ts`: `stepTime` è l'unica fonte dei tempi, swing compreso, sia per il sequencer sia per il render. Il sequencer live (`drums/sequencer.ts`) programma in anticipo sul clock dell'AudioContext; `setInterval` serve solo a svegliarlo. Nel render la coda oltre la fine si ripiega sull'inizio (`foldTail`), così il clip dura esattamente le sue battute.
 - **Campioni.** Le operazioni sono funzioni pure su `Float32Array` (`samples/ops.ts`), testate una per una, e non toccano mai la sorgente. `trim` usa i tempi della sorgente, quindi sta sempre in testa alla catena ed è unico. "Resample" non esiste perché è tutto a 48 kHz: al suo posto c'è `speed` (varispeed). `AudioWaveform` con la prop `duration` seleziona una regione trascinando, e un gesto sotto i 50 ms vale come click.
 - **e2e sui pannelli del rack.** Il rack scorre in orizzontale: prima di interagire col mouse su un pannello si chiama `scrollIntoViewIfNeeded()`, altrimenti su mobile, e in parte anche su desktop, il gesto cade fuori dall'area visibile.
+- **Timeline.** Il modello e lo scheduling puri stanno in `timeline/model.ts`: `schedulePlays` restituisce le ripetizioni con l'offset giusto per riprendere a metà, e `fadeEvents` riparte dal valore di dissolvenza già raggiunto. Il grafo è in `timeline/graph.ts`: sorgente → dissolvenza → volume del clip → traccia → master, uguale per ascolto e render. I nodi di volume stanno in un registro **per id**, e i fader cambiano dal vivo con `applyLiveGains`. Prima di fissare `t0` si decodificano tutti i buffer (`TimelineTransport.play`); le modifiche strutturali mentre suona fanno ripartire dal punto raggiunto.
+- **Drag and drop negli e2e.** Il trascinamento HTML5 fra libreria e timeline, lontane nella pagina, non funziona col mouse simulato di Playwright. Si usano `dispatchEvent('dragstart' | 'dragover' | 'drop', { dataTransfer })` con un `DataTransfer` vero.
 - **Effetti senza nodo nativo** (per esempio il bitcrush) sono AudioWorklet in `audio/worklets.ts`, caricati con `Voice.prepare`. Funzionano sia live sia offline.
 
 ## Convenzioni
@@ -179,7 +181,8 @@ Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-faile
 ## Stato e note operative
 
 - Fasi 1–4 completate: il portale è online su https://strangeverse-strange-verse.vercel.app, con il ruleset `protezione-main` attivo.
-- Fase 5 (DB e login) solo quando servirà. Prossimo passo: Fase 6, **Soundverse** (ADR 0006).
+- Fase 6: **MVP di Soundverse completo** (issue #7–#12): libreria, synth, batteria, campioni, timeline. Esclusi per scelta: ACE-Step e MCP (ADR 0006).
+- Fase 5 (DB e login) solo quando servirà, per esempio per sincronizzare la libreria fra dispositivi.
 - TypeScript è fermo alla 6.0 (ADR 0002). pnpm rifiuta le versioni pubblicate da meno di un giorno (ADR 0003).
 - pnpm blocca gli script di installazione dei pacchetti: quelli autorizzati sono in `allowBuilds` di `pnpm-workspace.yaml`. Oggi c'è solo `esbuild`.
 

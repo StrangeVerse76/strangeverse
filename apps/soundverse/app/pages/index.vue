@@ -32,7 +32,9 @@ useSeoMeta({
       <LibraryPanel />
     </StudioPanel>
 
-    <StudioPanel title="Timeline" :coming-in="12" class="studio__timeline" />
+    <StudioPanel title="Timeline" class="studio__timeline">
+      <TimelinePanel />
+    </StudioPanel>
   </div>
 </template>
 
