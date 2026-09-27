@@ -5,3 +5,15 @@ export function formatDuration(seconds: number): string {
   const rest = safe - minutes * 60
   return `${minutes}:${rest.toFixed(1).padStart(4, '0')}`
 }
+
+/** Valore di un parametro con la sua unità, in forma compatta: `220 Hz`, `1.20 kHz`, `250 ms`, `+3.0 dB`. */
+export function formatParam(value: number, unit: string, step = 0.01): string {
+  if (unit === 'Hz' && value >= 1000) return `${(value / 1000).toFixed(2)} kHz`
+  if (unit === 'Hz') return `${value < 100 ? value.toFixed(1) : Math.round(value)} Hz`
+  if (unit === 's' && value < 1) return `${Math.round(value * 1000)} ms`
+  if (unit === 's') return `${value.toFixed(2)} s`
+  if (unit === 'dB') return `${value > 0 ? '+' : ''}${value.toFixed(1)} dB`
+  if (unit === 'ct') return `${value > 0 ? '+' : ''}${Math.round(value)} ct`
+  const decimals = step >= 1 ? 0 : 2
+  return unit ? `${value.toFixed(decimals)}${unit}` : value.toFixed(decimals)
+}

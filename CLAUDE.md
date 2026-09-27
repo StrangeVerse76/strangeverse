@@ -81,7 +81,9 @@ Regole (lezioni di Bragi, da rispettare in ogni pannello):
 - **Ogni operazione crea un clip nuovo**, con la ricetta in `clip.recipe`. Per ogni nuovo pannello si aggiunge la sua variante all'unione `ClipRecipe`.
 - **Formato dei clip.** Tutto a 48 kHz, mono o stereo, salvato come WAV PCM a 24 bit con 512 picchi precalcolati.
 - **IndexedDB non clona i proxy di Vue.** Prima di salvare un oggetto preso dallo stato di Pinia si usa `structuredClone(toRaw(x))`.
-- **Nomi dei file.** I componenti in sottocartelle ripetono il prefisso nel nome del file (`library/LibraryPanel.vue` → `<LibraryPanel>`), come chiede la regola `vue/multi-word-component-names`.
+- **Nomi dei file.** I componenti in sottocartelle ripetono il prefisso nel nome del file (`library/LibraryPanel.vue` → `<LibraryPanel>`), come chiede la regola `vue/multi-word-component-names`. La cartella deve coincidere **esattamente** con l'inizio del nome: `controls/ControlKnob.vue` diventerebbe `<ControlsControlKnob>`, e un `<ControlKnob>` non risolto non dà errore né in typecheck né in lint. Solo gli e2e se ne accorgono.
+- **Synth.** La spec è in `synth/spec.ts`, con tipi, limiti dei parametri (`params`, `effectParams`, condivisi da manopole e `normalizeSpec`) e preset. Il grafo è in `synth/graph.ts`. `synthVoice(spec)` è la stessa Voice per `playLive` e `renderOffline`: il test `synth-graph.test.ts` confronta i due grafi su un contesto finto.
+- **Effetti senza nodo nativo** (per esempio il bitcrush) sono AudioWorklet in `audio/worklets.ts`, caricati con `Voice.prepare`. Funzionano sia live sia offline.
 
 ## Convenzioni
 

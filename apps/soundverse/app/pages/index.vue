@@ -17,7 +17,9 @@ useSeoMeta({
     <h1 class="visually-hidden">Soundverse</h1>
 
     <div class="studio__rack" role="group" aria-label="Strumenti">
-      <StudioPanel title="Synth" :coming-in="9" />
+      <StudioPanel title="Synth">
+        <SynthPanel />
+      </StudioPanel>
       <StudioPanel title="Batteria" :coming-in="10" />
       <StudioPanel title="Campioni" :coming-in="11" />
     </div>
@@ -53,7 +55,7 @@ useSeoMeta({
 .studio__rack {
   grid-area: rack;
   display: grid;
-  grid-auto-columns: minmax(20rem, 1fr);
+  grid-auto-columns: minmax(22rem, 1fr);
   grid-auto-flow: column;
   gap: var(--space-4);
   overflow-x: auto;
