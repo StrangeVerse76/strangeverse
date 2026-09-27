@@ -1,3 +1,4 @@
+import { toPlain } from '~/utils/plain'
 import { defineStore } from 'pinia'
 import * as storage from '~/library/db'
 import type { StoredProject } from '~/library/db'
@@ -12,6 +13,8 @@ import {
 /** Attesa dopo l'ultima modifica prima di salvare (ms). */
 const SAVE_DELAY = 400
 let saveTimer: ReturnType<typeof setTimeout> | undefined
+/** C'è un salvataggio automatico in attesa. */
+let pending = false
 
 export const useTimelineStore = defineStore('timeline', {
   state: () => ({
@@ -49,10 +52,11 @@ export const useTimelineStore = defineStore('timeline', {
     /** Salva subito il progetto aperto. */
     async save() {
       clearTimeout(saveTimer)
+      pending = false
       const entry: StoredProject = {
         id: this.projectId,
         name: this.projectName.trim() || 'Senza nome',
-        project: structuredClone(toRaw(this.project)),
+        project: toPlain(this.project),
         updatedAt: Date.now(),
       }
       await storage.saveProject(entry)
@@ -66,7 +70,13 @@ export const useTimelineStore = defineStore('timeline', {
     scheduleSave() {
       if (this.status !== 'ready') return
       clearTimeout(saveTimer)
+      pending = true
       saveTimer = setTimeout(() => void this.save(), SAVE_DELAY)
+    },
+
+    /** Salva subito se c'è un salvataggio in attesa (pagina nascosta o chiusa). */
+    flush() {
+      if (pending) void this.save()
     },
 
     /** Un progetto nuovo e davvero vuoto: tracce, BPM e master predefiniti, nessun blocco. */
@@ -102,7 +112,7 @@ export const useTimelineStore = defineStore('timeline', {
       this.show({
         id: crypto.randomUUID(),
         name,
-        project: structuredClone(toRaw(project)),
+        project: toPlain(project),
         updatedAt: Date.now(),
       })
       await this.save()

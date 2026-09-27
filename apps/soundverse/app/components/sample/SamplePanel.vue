@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toPlain } from '~/utils/plain'
 import type { WaveRegion } from '~/components/audio/AudioWaveform.vue'
 import { PEAK_BUCKETS, SAMPLE_RATE } from '~/audio/constants'
 import { unlockAudio } from '~/audio/context'
@@ -129,7 +130,7 @@ function stop() {
 async function computeResult(): Promise<Result | null> {
   if (!sourceChannels) return null
   if (result.value) return result.value
-  const channels = await applyChain(sourceChannels, structuredClone(toRaw(ops.value)))
+  const channels = await applyChain(sourceChannels, toPlain(ops.value))
   const length = channels[0]?.length ?? 0
   const computed: Result = {
     channels,
@@ -217,7 +218,7 @@ async function create() {
         type: 'sample',
         sourceId: clip.id,
         sourceName: clip.name,
-        ops: structuredClone(toRaw(ops.value)),
+        ops: toPlain(ops.value),
       },
     })
   } finally {
@@ -241,7 +242,7 @@ function rebuildEq() {
   const index = eqPreview.value
   const op = index === null ? null : ops.value[index]
   if (!eqSource || !eqOut || op?.type !== 'eq') return
-  const next = eqGraph(eqSource.context, structuredClone(toRaw(op.spec)))
+  const next = eqGraph(eqSource.context, toPlain(op.spec))
   next.output.connect(eqOut)
   eqSource.disconnect()
   eqSource.connect(next.input)

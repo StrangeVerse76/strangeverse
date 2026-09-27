@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useFlushOnHide } from '~/utils/flush'
+import { toPlain } from '~/utils/plain'
 import { unlockAudio } from '~/audio/context'
 import { bufferToChannels } from '~/audio/decode'
 import { renderOffline } from '~/audio/render'
@@ -167,6 +169,7 @@ async function onOpenProject(event: Event) {
 }
 
 onMounted(() => timeline.load())
+useFlushOnHide(() => timeline.flush())
 
 // Salvataggio automatico di ogni modifica, con una breve attesa.
 watch(
@@ -350,7 +353,7 @@ async function render() {
   if (!project.value.placements.length) return
   rendering.value = true
   try {
-    const snapshot = structuredClone(toRaw(project.value))
+    const snapshot = toPlain(project.value)
     const buffers = await loadBuffers()
     const rendered = await renderOffline(timelineVoice(snapshot, buffers, 0))
     await library.add({

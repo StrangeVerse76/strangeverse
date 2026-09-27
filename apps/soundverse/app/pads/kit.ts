@@ -1,4 +1,5 @@
 import type { ParamDef } from '~/synth/spec'
+import { newPattern, type PadPattern, type SequencerSettings } from './pattern'
 
 export const BANKS = ['A', 'B', 'C', 'D'] as const
 export type Bank = (typeof BANKS)[number]
@@ -25,7 +26,17 @@ export interface Kit {
   /** `BANKS.length × PADS_PER_BANK` pad, banco per banco. */
   pads: Pad[]
   updatedAt: number
+  /** Pattern del sequencer. Facoltativi: i kit salvati prima non li hanno. */
+  patterns?: PadPattern[]
+  sequencer?: SequencerSettings
 }
+
+export const defaultSequencer = (): SequencerSettings => ({
+  bpm: 90,
+  grid: '1/16',
+  quantize: true,
+  swing: 0,
+})
 
 export const padParams = {
   gain: { label: 'Volume', unit: '', min: 0, max: 1, step: 0.01, default: 0.8 },
@@ -49,6 +60,8 @@ export function newKit(name: string): Kit {
     name,
     pads: Array.from({ length: BANKS.length * PADS_PER_BANK }, emptyPad),
     updatedAt: Date.now(),
+    patterns: [newPattern(1)],
+    sequencer: defaultSequencer(),
   }
 }
 

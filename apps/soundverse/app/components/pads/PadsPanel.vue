@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useFlushOnHide } from '~/utils/flush'
 import { unlockAudio } from '~/audio/context'
 import { MuteGroups, playPadHit } from '~/pads/hit'
 import {
@@ -15,6 +16,7 @@ import {
 } from '~/pads/kit'
 import { useLibraryStore } from '~/stores/library'
 import { usePadsStore } from '~/stores/pads'
+import { usePadSequencer } from '~/pads/useSequencer'
 
 const DRAG_TYPE = 'application/x-soundverse-clip'
 /** Quanto resta acceso un pad dopo il colpo (ms), solo per l'occhio. */
@@ -23,7 +25,10 @@ const FLASH_MS = 120
 const pads = usePadsStore()
 const library = useLibraryStore()
 const mutes = new MuteGroups()
+const seq = usePadSequencer()
 const flashing = ref(new Set<number>())
+/** Colpi per pad dall'apertura della pagina: il lampo dura poco, il conteggio resta (serve ai test). */
+const hitCounts = ref(new Map<number, number>())
 const dropTarget = ref<number | null>(null)
 
 const clipsById = computed(() => new Map(library.clips.map((c) => [c.id, c])))
@@ -40,11 +45,17 @@ const lengthValue = computed({
 const clipName = (pad: Pad | undefined) =>
   pad?.clipId ? (clipsById.value.get(pad.clipId)?.name ?? 'Clip mancante') : 'vuoto'
 
+useFlushOnHide(() => pads.flush())
+
 onMounted(() => {
   void pads.load()
   window.addEventListener('keydown', onKeydown)
+  window.addEventListener('keyup', onKeyup)
 })
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('keyup', onKeyup)
+})
 
 watch(
   () => [pads.kit, pads.fullVelocity],
@@ -65,6 +76,7 @@ async function trigger(index: number, velocity: number) {
 }
 
 function flash(index: number) {
+  hitCounts.value = new Map(hitCounts.value).set(index, (hitCounts.value.get(index) ?? 0) + 1)
   flashing.value = new Set(flashing.value).add(index)
   setTimeout(() => {
     const next = new Set(flashing.value)
@@ -80,7 +92,8 @@ function onPadDown(event: PointerEvent, index: number) {
     ? 1
     : velocityFromPosition(event.clientY - rect.top, rect.height)
   pads.selected = index
-  void trigger(index, velocity)
+  if (seq.padDown(index, velocity)) void trigger(index, velocity)
+  else flash(index)
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -92,7 +105,13 @@ function onKeydown(event: KeyboardEvent) {
   event.preventDefault()
   const index = padIndex(pads.bank, number)
   pads.selected = index
-  void trigger(index, 1)
+  if (seq.padDown(index, 1)) void trigger(index, 1)
+  else flash(index)
+}
+
+function onKeyup(event: KeyboardEvent) {
+  const number = padNumberForKey(event.key)
+  if (number !== null) seq.padUp(padIndex(pads.bank, number))
 }
 
 function onDrop(event: DragEvent, index: number) {
@@ -161,7 +180,11 @@ async function onOpenKit(event: Event) {
           'pad--drop': dropTarget === padIndex(pads.bank, n),
         }"
         :aria-label="`Pad ${pads.bank}${n}: ${clipName(pads.kit.pads[padIndex(pads.bank, n)])}`"
+        :data-hits="hitCounts.get(padIndex(pads.bank, n)) ?? 0"
         @pointerdown="onPadDown($event, padIndex(pads.bank, n))"
+        @pointerup="seq.padUp(padIndex(pads.bank, n))"
+        @pointerleave="seq.padUp(padIndex(pads.bank, n))"
+        @pointercancel="seq.padUp(padIndex(pads.bank, n))"
         @keydown.enter.prevent="trigger(padIndex(pads.bank, n), 1)"
         @dragover="onDragOver($event, padIndex(pads.bank, n))"
         @dragleave="dropTarget = null"
@@ -205,6 +228,8 @@ async function onOpenKit(event: Event) {
         </label>
       </div>
     </section>
+
+    <PadsSequencer />
 
     <p class="hint">
       Tastiera: 1 2 3 4 · Q W E R · A S D F · Z X C V (il pad 1 è in basso a sinistra, come su una

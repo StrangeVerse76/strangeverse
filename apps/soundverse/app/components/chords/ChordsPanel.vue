@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toPlain } from '~/utils/plain'
 import { unlockAudio } from '~/audio/context'
 import { bufferToChannels } from '~/audio/decode'
 import { playLive, type LiveVoice } from '~/audio/live'
@@ -44,7 +45,7 @@ function onSound(event: Event) {
   const value = (event.target as HTMLSelectElement).value
   soundChoice.value = value
   if (value === 'Piano elettrico') chords.spec.sound = chordSound()
-  else if (value === 'Synth attuale') chords.spec.sound = structuredClone(toRaw(synth.spec))
+  else if (value === 'Synth attuale') chords.spec.sound = toPlain(synth.spec)
   else {
     const preset = synthPresets.find((p) => p.name === value)
     if (preset) chords.spec.sound = preset.spec()
@@ -70,7 +71,7 @@ async function togglePlay() {
   }
   const live = unlockAudio()
   playing.value = true
-  const current = await playLive(progressionVoice(structuredClone(toRaw(chords.spec))), live)
+  const current = await playLive(progressionVoice(toPlain(chords.spec)), live)
   voice = current
   await current.done
   if (voice === current) {
@@ -82,7 +83,7 @@ async function togglePlay() {
 async function save() {
   saving.value = true
   try {
-    const spec = structuredClone(toRaw(chords.spec))
+    const spec = toPlain(chords.spec)
     const rendered = await renderOffline(progressionVoice(spec))
     await library.add({
       name: chords.name,

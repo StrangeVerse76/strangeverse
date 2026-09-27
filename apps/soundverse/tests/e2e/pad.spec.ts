@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { encodeWav } from '../../app/audio/wav'
+import { readStore } from './helpers/idb'
 
 function toneWav(seconds: number): Buffer {
   const data = Float32Array.from(
@@ -42,8 +43,9 @@ test('si assegna un clip a un pad e lo si suona con la tastiera', async ({ page 
   await expect(pad(page, 'A1')).toHaveAccessibleName('Pad A1: cassa')
 
   await page.locator('body').click({ position: { x: 5, y: 5 } })
+  const before = Number(await pad(page, 'A1').getAttribute('data-hits'))
   await page.keyboard.press('z')
-  await expect(pad(page, 'A1')).toHaveClass(/pad--hit/)
+  await expect(pad(page, 'A1')).toHaveAttribute('data-hits', String(before + 1))
   expect(errors).toEqual([])
 })
 
@@ -92,4 +94,23 @@ test('eliminando un clip dalla libreria il pad si svuota', async ({ page }) => {
     .getByRole('button', { name: 'Elimina', exact: true })
     .click()
   await expect(pad(page, 'A2')).toHaveAccessibleName('Pad A2: vuoto')
+})
+
+test('nascondendo la pagina il kit si salva subito, senza aspettare', async ({ page }) => {
+  await importTone(page, 'subito')
+  await pad(page, 'A4').dispatchEvent('pointerdown')
+  await panel(page)
+    .getByRole('combobox', { name: 'Campione del pad' })
+    .selectOption({ label: 'subito' })
+  // Come quando si chiude la scheda: parte il salvataggio in attesa.
+  await page.evaluate(() => window.dispatchEvent(new Event('pagehide')))
+  await expect
+    .poll(
+      async () => {
+        const kits = await readStore<{ pads: { clipId: string | null }[] }>(page, 'kits')
+        return kits.some((k) => k.pads[3]?.clipId)
+      },
+      { timeout: 300 },
+    )
+    .toBeTruthy()
 })
