@@ -7,27 +7,33 @@ Uso personale, non commerciale, tutto su piani gratuiti. Piano completo: [`docs/
 
 Runtime: Node.js 24 (`.nvmrc`), pnpm tramite Corepack (versione in `packageManager` di `package.json`).
 
-| Comando                             | Cosa fa                                             |
-| ----------------------------------- | --------------------------------------------------- |
-| `pnpm install`                      | Installa le dipendenze di tutto il monorepo         |
-| `pnpm dev --filter <app>`           | Avvia un'app in sviluppo                            |
-| `pnpm lint`                         | ESLint su tutti i pacchetti (via Turborepo)         |
-| `pnpm typecheck`                    | Controllo dei tipi su tutti i pacchetti             |
-| `pnpm test`                         | Test Vitest su tutti i pacchetti                    |
-| `pnpm build`                        | Build di tutti i pacchetti                          |
-| `pnpm format` / `pnpm format:check` | Prettier su tutto il repo (scrive / solo controlla) |
+| Comando                             | Cosa fa                                                |
+| ----------------------------------- | ------------------------------------------------------ |
+| `pnpm install`                      | Installa le dipendenze di tutto il monorepo            |
+| `pnpm dev --filter <app>`           | Avvia un'app in sviluppo                               |
+| `pnpm lint`                         | ESLint su tutti i pacchetti (via Turborepo)            |
+| `pnpm typecheck`                    | Controllo dei tipi su tutti i pacchetti                |
+| `pnpm test`                         | Test Vitest su tutti i pacchetti                       |
+| `pnpm build`                        | Build di tutti i pacchetti                             |
+| `pnpm test:e2e --filter <app>`      | Test Playwright sulla build locale (dopo `pnpm build`) |
+| `pnpm format` / `pnpm format:check` | Prettier su tutto il repo (scrive / solo controlla)    |
 
 Per lavorare su un solo pacchetto: `pnpm <task> --filter <nome>` (es. `pnpm test --filter @strangeverse/config`).
+
+Playwright:
+
+- Con `PLAYWRIGHT_BASE_URL=<url>` i test girano su quell'indirizzo, per esempio un'anteprima Vercel. Senza, avviano la build locale su `localhost:3100`.
+- Con `PLAYWRIGHT_CHANNEL=chrome` usano il Chrome installato. Serve in locale, perché su questa rete il download di Chromium da parte di Playwright va in timeout.
 
 ## Struttura
 
 ```
 apps/                 # un'app Nuxt per cartella, ognuna con il proprio progetto Vercel
-  portale/            # (Fase 3) hub: home, catalogo app, profilo
+  portale/            # hub: home, catalogo app (app/data/apps.ts), chi sono
   musica/             # (Fase 6) step sequencer
 packages/
   config/             # ESLint, TypeScript, Prettier condivisi (@strangeverse/config)
-  ui/                 # (Fase 4) Nuxt Layer condiviso: tema, layout, componenti
+  ui/                 # Nuxt Layer condiviso: tema, layout, header, 404 (@strangeverse/ui)
   db/                 # (Fase 5) schema Drizzle, migrazioni, client
 docs/
   piano-di-lavoro.md  # il piano
@@ -38,7 +44,18 @@ docs/
 
 - Ogni pacchetto espone, se ha senso, gli script `lint`, `typecheck`, `test`, `build`, `dev`: Turborepo li orchestra.
 - Un nuovo pacchetto estende `@strangeverse/config/tsconfig.base.json` e usa `createConfig()` da `@strangeverse/config/eslint` nel proprio `eslint.config.js`.
-- Le app Nuxt aggiungeranno le regole per Vue sopra la configurazione di base.
+- Le app e i layer Nuxt usano invece `@strangeverse/config/vue`, che aggiunge le regole per Vue.
+
+### Layer `@strangeverse/ui`
+
+- Ogni app Nuxt lo estende con `extends: ['@strangeverse/ui']` e ne eredita `app.vue`, `error.vue` (404), il layout `default`, `SiteHeader`, `SiteFooter`, `ThemeToggle`, `SiteLogo`, il CSS globale e la favicon.
+- Il tema è fatto di token CSS in `packages/ui/app/assets/css/main.css`. Il predefinito è lo scuro; con la classe `.light` su `<html>` si passa al chiaro, gestito da `@nuxtjs/color-mode`. I componenti usano solo le variabili (`--color-*`, `--space-*`, `--text-*`, `--radius-*`), mai colori scritti a mano.
+- Ogni app si configura nel proprio `app/app.config.ts`, con `site.nav` per il menu e `site.homeUrl` per l'indirizzo del portale (da impostare nelle sotto-app).
+- I testi dell'interfaccia sono in italiano (`lang="it"`). i18n non è ancora attiva (D4).
+
+### Aggiungere un'app al catalogo
+
+Si aggiunge una voce in `apps/portale/app/data/apps.ts`. Un'app `live` deve avere un `url` https, e i test unitari lo verificano.
 
 ## Convenzioni
 
@@ -70,11 +87,24 @@ I blocchi sono imposti in `.claude/settings.json` e, soprattutto, dal ruleset di
 
 ## CI
 
-`.github/workflows/ci.yml` gira su ogni PR e su ogni push su `main`: formattazione, poi lint, typecheck e test tramite Turborepo.
+`.github/workflows/ci.yml` gira su ogni PR e su ogni push su `main`. Prima controlla la formattazione, poi con Turborepo esegue lint, typecheck, test, build e test Playwright (Chromium, con i browser in cache). Se fallisce, il report di Playwright si trova tra gli artifact del run.
 Sulle PR usa `--affected`, quindi solo i pacchetti toccati rispetto a `main` (una modifica ai file di root li coinvolge tutti).
 Il job si chiama **`CI`**: è il controllo obbligatorio nel ruleset di `main`.
 
 Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-failed`.
+
+## Deploy (Vercel)
+
+- Un progetto Vercel per app, tutti dallo stesso repo (team `strange-verse`, piano Hobby). Il progetto si chiama `strangeverse`, ha Root Directory `apps/portale` e la produzione è su https://strangeverse-strange-verse.vercel.app.
+- Ogni PR ha un deploy di **anteprima**; il merge su `main` va in **produzione**. Claude non lancia mai deploy di produzione dalla CLI.
+- `apps/<app>/vercel.json` usa `turbo-ignore` come _ignored build step_: se un commit non tocca l'app né i pacchetti da cui dipende, Vercel salta la build. La versione di `turbo-ignore` va tenuta uguale a quella di `turbo`.
+- Collegamento locale, una volta per cartella: `cd apps/<app> && vercel link` e poi `vercel env pull .env.local`. `.vercel/` e `.env*` sono ignorati da Git, e i file `.env*` non si leggono mai.
+- Leggere i deploy:
+  - `vercel ls <progetto>` elenca i deploy e il loro stato;
+  - `vercel inspect <url> --logs` mostra i log di build;
+  - `vercel logs <url>` mostra i log di runtime;
+  - `gh pr checks <n>` include lo stato di Vercel sulla PR.
+- Le anteprime sono protette da _Vercel Authentication_: per i test automatici serve il bypass (vedi `vercel curl`), oppure si testa la produzione.
 
 ## Vincoli dei piani gratuiti
 
@@ -85,8 +115,10 @@ Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-faile
 
 ## Stato e note operative
 
-- Fasi 1–2 in corso. L'account Vercel è in attesa di verifica da parte del supporto Vercel: la Fase 3 parte quando è sbloccato.
+- Fasi 1–2 completate; ruleset `protezione-main` attivo. Fase 4 (portale e layer UI) in corso.
+- Fase 3 in corso: il progetto Vercel `strangeverse` è collegato al repo.
 - TypeScript è fermo alla 6.0 (ADR 0002). pnpm rifiuta le versioni pubblicate da meno di un giorno (ADR 0003).
+- pnpm blocca gli script di installazione dei pacchetti: quelli autorizzati sono in `allowBuilds` di `pnpm-workspace.yaml`. Oggi c'è solo `esbuild`.
 
 ## Decisioni
 

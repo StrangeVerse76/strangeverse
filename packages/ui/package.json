@@ -1,0 +1,28 @@
+{
+  "name": "@strangeverse/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Nuxt Layer condiviso: tema, layout, header e componenti comuni",
+  "main": "./nuxt.config.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxtjs/color-mode": "4.0.1"
+  },
+  "peerDependencies": {
+    "nuxt": "^4.5.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@strangeverse/config": "workspace:*",
+    "eslint": "10.11.0",
+    "nuxt": "4.5.2",
+    "typescript": "6.0.3",
+    "vue": "3.5.43",
+    "vue-tsc": "3.3.11"
+  }
+}

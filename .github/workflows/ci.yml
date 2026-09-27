@@ -36,10 +36,31 @@ jobs:
       - name: Formattazione
         run: pnpm format:check
 
-      - name: Lint, typecheck e test (solo pacchetti toccati)
-        if: github.event_name == 'pull_request'
-        run: pnpm turbo run lint typecheck test --affected
+      # I browser di Playwright si scaricano una volta e restano in cache finché non cambia il lockfile.
+      - name: Cache dei browser di Playwright
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
-      - name: Lint, typecheck e test (tutto)
+      - name: Installazione dei browser di Playwright
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter @strangeverse/portale exec playwright install --with-deps chromium
+
+      - name: Lint, typecheck, test, build ed e2e (solo pacchetti toccati)
+        if: github.event_name == 'pull_request'
+        run: pnpm turbo run lint typecheck test build test:e2e --affected
+
+      - name: Lint, typecheck, test, build ed e2e (tutto)
         if: github.event_name != 'pull_request'
-        run: pnpm turbo run lint typecheck test
+        run: pnpm turbo run lint typecheck test build test:e2e
+
+      - name: Report di Playwright
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: apps/*/playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore

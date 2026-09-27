@@ -9,3 +9,4 @@ Le decisioni non si riscrivono: se cambiano, se ne aggiunge una nuova che sostit
 | [0002](0002-typescript-6.md)                 | TypeScript fermo alla 6.0                 | Accettata |
 | [0003](0003-eta-minima-dipendenze.md)        | Età minima delle dipendenze (pnpm)        | Accettata |
 | [0004](0004-configurazioni-in-javascript.md) | `packages/config` in JavaScript con JSDoc | Accettata |
+| [0005](0005-tema-con-token-css.md)           | Tema con token CSS, senza framework UI    | Accettata |

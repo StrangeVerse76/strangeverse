@@ -1,3 +1,7 @@
 packages:
   - apps/*
   - packages/*
+
+# Pacchetti autorizzati a eseguire script di installazione (pnpm li blocca per default).
+allowBuilds:
+  esbuild: true
