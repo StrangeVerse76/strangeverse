@@ -49,7 +49,7 @@ docs/
 
 ### Layer `@strangeverse/ui`
 
-- Il `build` del layer esegue solo `nuxt prepare`: genera `packages/ui/.nuxt/`, che serve alla build delle app (Vite legge il tsconfig del layer). Turborepo lo lancia prima delle app grazie a `dependsOn: ["^build"]`.
+- Il layer non ha `build`: i suoi tipi (`packages/ui/.nuxt/`, letti da Vite durante la build delle app) li genera `prepare:types`, che Turborepo esegue prima di quello delle app.
 - Ogni app Nuxt lo estende con `extends: ['@strangeverse/ui']` e ne eredita `app.vue`, `error.vue` (404), il layout `default`, `SiteHeader`, `SiteFooter`, `ThemeToggle`, `SiteLogo`, il CSS globale e la favicon.
 - Il tema è fatto di token CSS in `packages/ui/app/assets/css/main.css`. Il predefinito è lo scuro; con la classe `.light` su `<html>` si passa al chiaro, gestito da `@nuxtjs/color-mode`. I componenti usano solo le variabili (`--color-*`, `--space-*`, `--text-*`, `--radius-*`), mai colori scritti a mano.
 - Ogni app si configura nel proprio `app/app.config.ts`:
@@ -95,6 +95,14 @@ I blocchi sono imposti in `.claude/settings.json` e, soprattutto, dal ruleset di
 
 `.github/workflows/ci.yml` gira su ogni PR e su ogni push su `main`. Prima controlla la formattazione, poi con Turborepo esegue lint, typecheck, test, build e test Playwright (Chromium, con i browser in cache). Se fallisce, il report di Playwright si trova tra gli artifact del run.
 Sulle PR usa `--affected`, quindi solo i pacchetti toccati rispetto a `main` (una modifica ai file di root li coinvolge tutti).
+Nei pacchetti Nuxt la cartella `.nuxt/` (tipi generati) è stato condiviso, quindi l'ordine dei task in `turbo.json` è fissato:
+
+1. `prepare:types` (`nuxt prepare`) la genera, prima nel layer e poi nelle app;
+2. `typecheck` (`vue-tsc -b`) e `test` (Vitest) la leggono soltanto;
+3. `build` la riscrive, quindi parte solo dopo `typecheck` e `test` dello stesso pacchetto.
+
+Anche su Vercel una build passa quindi da typecheck e test. Non usare `nuxt typecheck` negli script, perché rigenera `.nuxt/` mentre altri task la leggono.
+
 Il job si chiama **`CI`**: è il controllo obbligatorio nel ruleset di `main`.
 
 Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-failed`.
