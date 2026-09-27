@@ -1,4 +1,5 @@
 import { SAMPLE_RATE } from '~/audio/constants'
+import { defaultEq, type EqSpec } from '~/eq/spec'
 import type { ParamDef } from '~/synth/spec'
 import { dbToGain } from '~/utils/scale'
 
@@ -13,6 +14,7 @@ export type SampleOp =
   | { type: 'gain'; db: number }
   | { type: 'fade'; fadeIn: number; fadeOut: number }
   | { type: 'speed'; rate: number }
+  | { type: 'eq'; spec: EqSpec }
 
 export type SampleOpType = SampleOp['type']
 
@@ -24,6 +26,7 @@ export const opLabels: Record<SampleOpType, string> = {
   gain: 'Guadagno',
   fade: 'Dissolvenze',
   speed: 'Velocità',
+  eq: 'Equalizzatore',
 }
 
 export const opParams = {
@@ -40,18 +43,20 @@ export const opParams = {
     fadeIn: { label: 'Fade in', unit: 's', min: 0, max: 10, step: 0.01, default: 0.01 },
     fadeOut: { label: 'Fade out', unit: 's', min: 0, max: 10, step: 0.01, default: 0.1 },
   },
+  eq: {},
   speed: {
     rate: { label: 'Velocità', unit: '×', min: 0.25, max: 4, log: true, step: 0.01, default: 1 },
   },
 } satisfies {
-  // Il taglio non ha manopole: i suoi tempi vengono dalla regione disegnata sulla forma d'onda.
-  [T in SampleOpType]: T extends 'trim'
+  // Taglio ed EQ non hanno manopole qui: il taglio usa la regione, l'EQ ha il suo editor.
+  [T in SampleOpType]: T extends 'trim' | 'eq'
     ? Record<never, ParamDef>
     : Record<Exclude<keyof Extract<SampleOp, { type: T }>, 'type'>, ParamDef>
 }
 
 /** Un'operazione con i valori predefiniti (per `trim` servono start/end dalla regione). */
 export function defaultOp(type: Exclude<SampleOpType, 'trim'>): SampleOp {
+  if (type === 'eq') return { type: 'eq', spec: defaultEq() }
   const defs = opParams[type] as Record<string, ParamDef>
   return {
     type,
@@ -59,7 +64,10 @@ export function defaultOp(type: Exclude<SampleOpType, 'trim'>): SampleOp {
   } as SampleOp
 }
 
-/** Applica la catena in ordine. Non modifica i canali in ingresso: il clip sorgente resta intatto. */
+/**
+ * Applica la catena in ordine. Non modifica i canali in ingresso: il clip sorgente resta intatto.
+ * Solo operazioni sincrone: per una catena con l'EQ si usa `applyChain`.
+ */
 export function applyOps(input: readonly Float32Array[], ops: readonly SampleOp[]): Channels {
   let channels: Channels = input.map((channel) => channel.slice())
   for (const op of ops) channels = applyOp(channels, op)
@@ -119,6 +127,9 @@ function applyOp(channels: Channels, op: SampleOp): Channels {
 
     case 'speed':
       return channels.map((channel) => varispeed(channel, op.rate))
+
+    case 'eq':
+      throw new Error("L'EQ passa da un OfflineAudioContext: usa applyChain")
   }
 }
 
@@ -158,4 +169,18 @@ function scale(channels: Channels, factor: number): Channels {
 
 function clampIndex(index: number, length: number) {
   return Math.min(length, Math.max(0, index))
+}
+
+/**
+ * Come `applyOps`, ma accetta anche l'EQ: quello si rende con il suo grafo audio
+ * (lo stesso dell'ascolto), le altre operazioni restano funzioni pure.
+ */
+export async function applyChain(input: readonly Float32Array[], ops: readonly SampleOp[]) {
+  const { renderEq } = await import('~/eq/graph')
+  let channels: Channels = input.map((channel) => channel.slice())
+  for (const op of ops) {
+    channels =
+      op.type === 'eq' ? ((await renderEq(channels, op.spec)) as Channels) : applyOp(channels, op)
+  }
+  return channels
 }
