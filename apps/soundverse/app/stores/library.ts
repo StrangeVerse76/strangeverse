@@ -77,22 +77,26 @@ export const useLibraryStore = defineStore('library', {
       return clip
     },
 
-    async importFiles(files: Iterable<File>) {
+    /** Importa i file come campioni e restituisce i clip creati (quelli illeggibili si saltano). */
+    async importFiles(files: Iterable<File>): Promise<Clip[]> {
       this.error = null
+      const imported: Clip[] = []
       for (const file of files) {
         try {
           const buffer = await decodeAudio(await file.arrayBuffer())
-          await this.add({
+          const clip = await this.add({
             name: file.name.replace(/\.[^.]+$/, ''),
             kind: 'sample',
             channels: bufferToChannels(buffer),
             recipe: { type: 'import', fileName: file.name },
           })
+          imported.push(clip)
         } catch (cause) {
           this.error = `Non riesco a leggere «${file.name}»: il formato non è supportato da questo browser.`
           console.error(cause)
         }
       }
+      return imported
     },
 
     select(id: string | null) {

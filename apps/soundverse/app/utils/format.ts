@@ -17,3 +17,9 @@ export function formatParam(value: number, unit: string, step = 0.01): string {
   const decimals = step >= 1 ? 0 : 2
   return unit ? `${value.toFixed(decimals)}${unit}` : value.toFixed(decimals)
 }
+
+/** Livello lineare in dBFS con un decimale; il silenzio è `-∞ dBFS`. */
+export function formatDb(level: number): string {
+  if (!(level > 0)) return '-∞ dBFS'
+  return `${(20 * Math.log10(level)).toFixed(1)} dBFS`
+}
