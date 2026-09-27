@@ -136,3 +136,33 @@ test('se la sorgente viene eliminata, il pannello si svuota', async ({ page }) =
     .click()
   await expect(samples(page).getByText('Scegli un clip della libreria come sorgente')).toBeVisible()
 })
+
+test('allunga, intonazione e "da BPM a BPM" cambiano la durata come previsto', async ({ page }) => {
+  await loadTone(page)
+  const result = samples(page).getByLabel('Analisi del risultato')
+
+  await addOp(page, 'Allunga (tempo)')
+  const factor = samples(page).getByRole('slider', { name: 'Durata' })
+  await factor.focus()
+  await page.keyboard.press('End') // ×4
+  await samples(page).getByRole('button', { name: 'Ascolta risultato' }).click()
+  await expect(result).toContainText('Risultato: 0:04.0')
+  await samples(page).getByRole('button', { name: 'Stop' }).click()
+
+  await samples(page).getByRole('button', { name: 'Rimuovi Allunga (tempo)' }).click()
+  await addOp(page, 'Intonazione')
+  const semitones = samples(page).getByRole('slider', { name: 'Semitoni' })
+  await semitones.focus()
+  await page.keyboard.press('End') // +24
+  await samples(page).getByRole('button', { name: 'Ascolta risultato' }).click()
+  await expect(result).toContainText('Risultato: 0:01.0')
+  await samples(page).getByRole('button', { name: 'Stop' }).click()
+
+  await samples(page).getByRole('button', { name: 'Rimuovi Intonazione' }).click()
+  await addOp(page, 'Da BPM a BPM')
+  const to = samples(page).getByRole('slider', { name: 'A', exact: true })
+  await to.focus()
+  await page.keyboard.press('Home') // da 120 a 40 BPM: ×3
+  await samples(page).getByRole('button', { name: 'Ascolta risultato' }).click()
+  await expect(result).toContainText('Risultato: 0:03.0')
+})
