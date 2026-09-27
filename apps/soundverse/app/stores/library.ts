@@ -1,3 +1,4 @@
+import { saveFile } from '~/utils/download'
 import { toPlain } from '~/utils/plain'
 import { defineStore } from 'pinia'
 import { MAX_CHANNELS, PEAK_BUCKETS, SAMPLE_RATE } from '~/audio/constants'
@@ -202,15 +203,6 @@ export const useLibraryStore = defineStore('library', {
     },
   },
 })
-
-function saveFile(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = name
-  link.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
 
 /** Copia senza proxy reattivi, salvabile in IndexedDB. */
 function plain(clip: Clip): Clip {

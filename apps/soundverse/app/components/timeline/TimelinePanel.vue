@@ -6,7 +6,12 @@ import { bufferToChannels } from '~/audio/decode'
 import { renderOffline } from '~/audio/render'
 import { useLibraryStore } from '~/stores/library'
 import { useTimelineStore } from '~/stores/timeline'
+import { SAMPLE_RATE } from '~/audio/constants'
+import { encodeWav } from '~/audio/wav'
+import { stemProject, stemTracks } from '~/export/stems'
+import { safeFileName, zip } from '~/export/zip'
 import { limitPeak, timelineVoice } from '~/timeline/graph'
+import { saveFile } from '~/utils/download'
 import type { ParamDef } from '~/synth/spec'
 import {
   blockLength,
@@ -355,6 +360,47 @@ function onBlockKey(event: KeyboardEvent, placement: Placement) {
   event.preventDefault()
 }
 
+const stemsProgress = ref<string | null>(null)
+const stemsToLibrary = ref(false)
+const stemCount = computed(() => stemTracks(project.value).length)
+
+/**
+ * Uno stem per traccia: la traccia da sola, con i suoi effetti, lunga quanto il mix intero.
+ * Niente limitatore per stem: i livelli relativi fra gli stem devono restare quelli del mix.
+ */
+async function exportStems() {
+  const snapshot = toPlain(project.value)
+  const tracks = stemTracks(snapshot)
+  if (!tracks.length) return
+  try {
+    const buffers = await loadBuffers()
+    const entries = []
+    for (const [i, track] of tracks.entries()) {
+      stemsProgress.value = `Stem ${i + 1}/${tracks.length}…`
+      const stem = stemProject(snapshot, track.id)
+      const channels = bufferToChannels(await renderOffline(timelineVoice(stem, buffers, 0)))
+      entries.push({
+        name: `${safeFileName(timeline.name)} - ${safeFileName(track.name)}.wav`,
+        data: new Uint8Array(encodeWav(channels, SAMPLE_RATE)),
+      })
+      if (stemsToLibrary.value) {
+        await library.add({
+          name: `${timeline.name} – ${track.name}`,
+          kind: 'mix',
+          channels: channels as Float32Array<ArrayBuffer>[],
+          recipe: { type: 'mix', project: stem },
+        })
+      }
+    }
+    saveFile(
+      new Blob([zip(entries)], { type: 'application/zip' }),
+      `${safeFileName(timeline.name)} stem.zip`,
+    )
+  } finally {
+    stemsProgress.value = null
+  }
+}
+
 async function render() {
   if (!project.value.placements.length) return
   rendering.value = true
@@ -587,6 +633,18 @@ async function render() {
       >
         {{ rendering ? 'Rendering…' : 'Renderizza in libreria' }}
       </button>
+      <button
+        type="button"
+        class="button button--ghost"
+        :disabled="stemsProgress !== null || stemCount === 0"
+        @click="exportStems"
+      >
+        {{ stemsProgress ?? `Esporta ${stemCount} stem` }}
+      </button>
+      <label class="toggle">
+        <input v-model="stemsToLibrary" type="checkbox" />
+        anche in libreria
+      </label>
     </div>
   </div>
 </template>
@@ -846,6 +904,13 @@ async function render() {
 .chip[aria-pressed='true'] {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
 }
 
 .actions__name {
