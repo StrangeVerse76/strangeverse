@@ -29,6 +29,9 @@ useSeoMeta({
       <StudioPanel title="Mixer">
         <MixerPanel />
       </StudioPanel>
+      <StudioPanel title="MIDI">
+        <MidiPanel />
+      </StudioPanel>
       <StudioPanel title="Synth">
         <SynthPanel />
       </StudioPanel>

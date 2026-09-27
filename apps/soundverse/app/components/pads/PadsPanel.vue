@@ -19,6 +19,8 @@ import { usePadsStore } from '~/stores/pads'
 import { level, levelLabels, levelText, pianoTune, type PadOverrides } from '~/pads/levels'
 import { usePadSequencer } from '~/pads/useSequencer'
 import { livePadBus } from '~/pads/bus'
+import { padForNote } from '~/midi/messages'
+import { onMidiNote, useMidiStore } from '~/stores/midi'
 
 const DRAG_TYPE = 'application/x-soundverse-clip'
 /** Quanto resta acceso un pad dopo il colpo (ms), solo per l'occhio. */
@@ -48,6 +50,24 @@ const clipName = (pad: Pad | undefined) =>
   pad?.clipId ? (clipsById.value.get(pad.clipId)?.name ?? 'Clip mancante') : 'vuoto'
 
 useFlushOnHide(() => pads.flush())
+
+// Le note MIDI suonano i pad (indice assoluto, qualunque sia il banco mostrato).
+const midi = useMidiStore()
+let stopMidi: (() => void) | null = null
+onMounted(() => {
+  stopMidi = onMidiNote((note, velocity, on) => {
+    const index = padForNote(note, midi.baseNote, midi.learnedNotes)
+    if (index === null) return
+    if (!on) {
+      seq.padUp(index)
+      return
+    }
+    pads.selected = index
+    if (seq.padDown(index, velocity)) void trigger(index, velocity)
+    else flash(index)
+  })
+})
+onBeforeUnmount(() => stopMidi?.())
 
 onMounted(() => {
   void pads.load()
