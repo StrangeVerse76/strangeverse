@@ -16,6 +16,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@breezystack/lamejs": "1.2.7",
     "@pinia/nuxt": "1.0.2",
     "@strangeverse/ui": "workspace:*",
     "idb": "8.0.3",
