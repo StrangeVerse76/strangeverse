@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { MAX_CHANNELS, PEAK_BUCKETS, SAMPLE_RATE } from '~/audio/constants'
+import type { Mp3Bitrate } from '~/audio/mp3-core'
 import { bufferToChannels, decodeAudio } from '~/audio/decode'
 import { computePeaks, peakLevel } from '~/audio/peaks'
 import { encodeWav } from '~/audio/wav'
@@ -185,16 +186,28 @@ export const useLibraryStore = defineStore('library', {
     async download(id: string) {
       const clip = this.clips.find((c) => c.id === id)
       const audio = await storage.getAudio(id)
-      if (!clip || !audio) return
-      const url = URL.createObjectURL(audio)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${clip.name}.wav`
-      link.click()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      if (clip && audio) saveFile(audio, `${clip.name}.wav`)
+    },
+
+    /** Codifica in MP3 (in un Worker) e scarica. */
+    async downloadMp3(id: string, kbps: Mp3Bitrate, onProgress?: (fraction: number) => void) {
+      const clip = this.clips.find((c) => c.id === id)
+      if (!clip) return
+      const { encodeMp3 } = await import('~/audio/mp3')
+      const channels = bufferToChannels(await this.getBuffer(id))
+      saveFile(await encodeMp3(channels, kbps, onProgress), `${clip.name}.mp3`)
     },
   },
 })
+
+function saveFile(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
 
 /** Copia senza proxy reattivi, salvabile in IndexedDB. */
 function plain(clip: Clip): Clip {

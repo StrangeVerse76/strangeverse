@@ -32,3 +32,13 @@ test('la pagina scorre in orizzontale solo dentro il rack', async ({ page }) => 
   )
   expect(overflow).toBe(0)
 })
+
+test('la pagina Licenze cita l’encoder MP3 e la sua licenza', async ({ page }) => {
+  await page.goto('/')
+  await page
+    .getByRole('navigation', { name: 'Principale' })
+    .getByRole('link', { name: 'Licenze' })
+    .click()
+  await expect(page).toHaveTitle('Licenze · Soundverse')
+  await expect(page.getByRole('link', { name: 'GNU LGPL 3.0' })).toBeVisible()
+})

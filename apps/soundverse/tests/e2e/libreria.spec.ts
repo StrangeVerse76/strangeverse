@@ -122,3 +122,28 @@ test('un file non audio mostra un errore', async ({ page }) => {
   })
   await expect(page.getByRole('alert')).toContainText('Non riesco a leggere «note.wav»')
 })
+
+test('scarica il clip come MP3, che il browser sa decodificare', async ({ page }) => {
+  await importTone(page, 'da-comprimere', 1, 2)
+  await page.getByRole('combobox', { name: 'Qualità MP3' }).selectOption('128')
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Scarica MP3' }).click(),
+  ])
+  expect(download.suggestedFilename()).toBe('da-comprimere.mp3')
+  const path = await download.path()
+  if (!path) throw new Error('download non salvato')
+  const { readFile } = await import('node:fs/promises')
+  const bytes = await readFile(path)
+  expect(bytes[0]).toBe(0xff)
+
+  // Lo si ridà al browser: deve decodificarlo in circa 1 s di audio stereo.
+  const decoded = await page.evaluate(async (base64) => {
+    const data = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
+    const buffer = await new OfflineAudioContext(1, 1, 48_000).decodeAudioData(data.buffer)
+    return { duration: buffer.duration, channels: buffer.numberOfChannels }
+  }, bytes.toString('base64'))
+  expect(decoded.channels).toBe(2)
+  expect(decoded.duration).toBeGreaterThan(0.95)
+  expect(decoded.duration).toBeLessThan(1.1)
+})

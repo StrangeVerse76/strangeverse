@@ -2,6 +2,7 @@
 import { unlockAudio } from '~/audio/context'
 import { BufferPlayer } from '~/audio/player'
 import { kindLabels, type Clip } from '~/library/types'
+import { MP3_BITRATES, type Mp3Bitrate } from '~/audio/mp3-core'
 import { useLibraryStore } from '~/stores/library'
 import { useTimelineStore } from '~/stores/timeline'
 import { blockLength } from '~/timeline/model'
@@ -10,6 +11,17 @@ import { formatDuration } from '~/utils/format'
 const UNDO_SECONDS = 10
 
 const library = useLibraryStore()
+const mp3Bitrate = ref<Mp3Bitrate>(192)
+const mp3Progress = ref<number | null>(null)
+
+async function downloadMp3(clip: Clip) {
+  mp3Progress.value = 0
+  try {
+    await library.downloadMp3(clip.id, mp3Bitrate.value, (f) => (mp3Progress.value = f))
+  } finally {
+    mp3Progress.value = null
+  }
+}
 const timeline = useTimelineStore()
 
 /** Tipo MIME del trascinamento verso la timeline. */
@@ -261,6 +273,19 @@ async function onDrop(event: DragEvent) {
         >
           Scarica WAV
         </button>
+        <span class="mp3">
+          <select v-model="mp3Bitrate" class="field" aria-label="Qualità MP3">
+            <option v-for="kbps in MP3_BITRATES" :key="kbps" :value="kbps">{{ kbps }} kbps</option>
+          </select>
+          <button
+            type="button"
+            class="button button--ghost"
+            :disabled="mp3Progress !== null"
+            @click="downloadMp3(library.selected)"
+          >
+            {{ mp3Progress === null ? 'Scarica MP3' : `MP3… ${Math.round(mp3Progress * 100)}%` }}
+          </button>
+        </span>
         <button type="button" class="button button--ghost" @click="addToTimeline(library.selected)">
           Aggiungi alla timeline
         </button>
@@ -388,6 +413,11 @@ async function onDrop(event: DragEvent) {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.mp3 {
+  display: inline-flex;
+  gap: var(--space-1);
 }
 
 .toast {
