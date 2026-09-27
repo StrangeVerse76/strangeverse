@@ -90,7 +90,7 @@ test('scarica il clip come WAV', async ({ page }) => {
 test('elimina un clip e lo recupera con Annulla', async ({ page }) => {
   await importTone(page, 'effimero')
 
-  await page.getByRole('button', { name: 'Elimina' }).click()
+  await page.getByRole('button', { name: 'Elimina', exact: true }).click()
   await expect(clipButton(page, 'effimero')).toHaveCount(0)
 
   const toast = page.getByRole('status').filter({ hasText: 'eliminato' })

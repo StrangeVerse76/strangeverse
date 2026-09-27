@@ -132,6 +132,7 @@ test('nel mix renderizzato ogni clip parte al campione giusto', async ({ page })
   await page.keyboard.press('ArrowRight')
   await expect(timeline(page).getByRole('listitem', { name: 'secondo a 0:01.0' })).toBeVisible()
 
+  await timeline(page).getByRole('textbox', { name: 'Nome del mix' }).fill('Mix')
   await timeline(page).getByRole('button', { name: 'Renderizza in libreria' }).click()
   await expect(clipButton(page, 'Mix')).toContainText('0:01.5 · stereo')
   const [download] = await Promise.all([
@@ -157,6 +158,6 @@ test('eliminando un clip dalla libreria sparisce anche dalla timeline', async ({
   await addToTimeline(page, 'temporaneo')
   await expect(timeline(page).getByRole('listitem', { name: /temporaneo/ })).toBeVisible()
 
-  await library(page).getByRole('button', { name: 'Elimina' }).click()
+  await library(page).getByRole('button', { name: 'Elimina', exact: true }).click()
   await expect(timeline(page).getByRole('listitem', { name: /temporaneo/ })).toHaveCount(0)
 })
