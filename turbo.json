@@ -1,13 +1,21 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "tasks": {
+    "prepare:types": {
+      "dependsOn": ["^prepare:types"],
+      "outputs": [".nuxt/**"]
+    },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "^prepare:types", "typecheck", "test"],
       "outputs": ["dist/**", ".output/**", ".nuxt/**"]
     },
     "lint": {},
-    "typecheck": {},
-    "test": {},
+    "typecheck": {
+      "dependsOn": ["^prepare:types", "prepare:types"]
+    },
+    "test": {
+      "dependsOn": ["^prepare:types", "prepare:types"]
+    },
     "test:e2e": {
       "dependsOn": ["build"],
       "outputs": ["playwright-report/**", "test-results/**"],

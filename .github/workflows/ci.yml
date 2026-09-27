@@ -50,6 +50,9 @@ jobs:
 
       - name: Lint, typecheck, test, build ed e2e (solo pacchetti toccati)
         if: github.event_name == 'pull_request'
+        # Nel checkout della PR esiste solo origin/<base>, non il branch locale.
+        env:
+          TURBO_SCM_BASE: origin/${{ github.base_ref }}
         run: pnpm turbo run lint typecheck test build test:e2e --affected
 
       - name: Lint, typecheck, test, build ed e2e (tutto)

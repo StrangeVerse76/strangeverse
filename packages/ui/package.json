@@ -6,9 +6,9 @@
   "description": "Nuxt Layer condiviso: tema, layout, header e componenti comuni",
   "main": "./nuxt.config.ts",
   "scripts": {
-    "build": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck",
+    "prepare:types": "nuxt prepare",
+    "typecheck": "vue-tsc -b --noEmit",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
