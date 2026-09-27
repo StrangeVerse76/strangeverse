@@ -40,9 +40,11 @@ const route = useRoute()
 
 .header__inner {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
   min-height: 4rem;
+  padding-block: var(--space-2);
 }
 
 .brand {
@@ -80,6 +82,15 @@ const route = useRoute()
 .nav {
   display: flex;
   gap: var(--space-1);
+}
+
+/* Su schermi stretti: marchio e tema sulla prima riga, il menu sotto. */
+@media (max-width: 30rem) {
+  .nav {
+    order: 3;
+    width: 100%;
+    margin-inline: calc(-1 * var(--space-3));
+  }
 }
 
 .nav__link {

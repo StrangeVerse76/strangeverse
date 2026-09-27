@@ -22,6 +22,7 @@ export interface NewClip {
 function recipeBpm(recipe: ClipRecipe): number | null {
   if (recipe.type === 'drums') return recipe.pattern.bpm
   if (recipe.type === 'mix') return recipe.project.bpm
+  if (recipe.type === 'chords') return recipe.spec.bpm
   return null
 }
 

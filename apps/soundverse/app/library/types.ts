@@ -1,3 +1,4 @@
+import type { ProgressionSpec } from '~/chords/progression'
 import type { DrumPattern } from '~/drums/pattern'
 import type { SampleOp } from '~/samples/ops'
 import type { SynthSpec } from '~/synth/spec'
@@ -15,6 +16,7 @@ export type ClipRecipe =
   | { type: 'drums'; pattern: DrumPattern }
   | { type: 'sample'; sourceId: string; sourceName: string; ops: SampleOp[] }
   | { type: 'mix'; project: TimelineProject }
+  | { type: 'chords'; spec: ProgressionSpec }
 
 /** Metadati di un clip. L'audio (WAV) è salvato a parte, con lo stesso `id`. */
 export interface Clip {
