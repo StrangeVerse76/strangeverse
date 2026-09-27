@@ -2,15 +2,13 @@
 import { useFlushOnHide } from '~/utils/flush'
 import { toPlain } from '~/utils/plain'
 import { unlockAudio } from '~/audio/context'
-import { bufferToChannels } from '~/audio/decode'
-import { renderOffline } from '~/audio/render'
+import { renderRecipe } from '~/library/recipes'
 import { useLibraryStore } from '~/stores/library'
 import { useTimelineStore } from '~/stores/timeline'
 import { SAMPLE_RATE } from '~/audio/constants'
 import { encodeWav } from '~/audio/wav'
 import { stemProject, stemTracks } from '~/export/stems'
 import { safeFileName, zip } from '~/export/zip'
-import { limitPeak, timelineVoice } from '~/timeline/graph'
 import { saveFile } from '~/utils/download'
 import type { ParamDef } from '~/synth/spec'
 import {
@@ -373,12 +371,11 @@ async function exportStems() {
   const tracks = stemTracks(snapshot)
   if (!tracks.length) return
   try {
-    const buffers = await loadBuffers()
     const entries = []
     for (const [i, track] of tracks.entries()) {
       stemsProgress.value = `Stem ${i + 1}/${tracks.length}…`
-      const stem = stemProject(snapshot, track.id)
-      const channels = bufferToChannels(await renderOffline(timelineVoice(stem, buffers, 0)))
+      const recipe = { type: 'mix', project: stemProject(snapshot, track.id), stem: true } as const
+      const channels = await renderRecipe(recipe, library.sourceBuffer)
       entries.push({
         name: `${safeFileName(timeline.name)} - ${safeFileName(track.name)}.wav`,
         data: new Uint8Array(encodeWav(channels, SAMPLE_RATE)),
@@ -387,8 +384,8 @@ async function exportStems() {
         await library.add({
           name: `${timeline.name} – ${track.name}`,
           kind: 'mix',
-          channels: channels as Float32Array<ArrayBuffer>[],
-          recipe: { type: 'mix', project: stem },
+          channels,
+          recipe,
         })
       }
     }
@@ -405,14 +402,12 @@ async function render() {
   if (!project.value.placements.length) return
   rendering.value = true
   try {
-    const snapshot = toPlain(project.value)
-    const buffers = await loadBuffers()
-    const rendered = await renderOffline(timelineVoice(snapshot, buffers, 0))
+    const recipe = { type: 'mix', project: toPlain(project.value) } as const
     await library.add({
       name: timeline.name,
       kind: 'mix',
-      channels: limitPeak(bufferToChannels(rendered) as Float32Array<ArrayBuffer>[]),
-      recipe: { type: 'mix', project: snapshot },
+      channels: await renderRecipe(recipe, library.sourceBuffer),
+      recipe,
     })
   } finally {
     rendering.value = false

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { toPlain } from '~/utils/plain'
 import { unlockAudio } from '~/audio/context'
-import { bufferToChannels } from '~/audio/decode'
 import { playLive, type LiveVoice } from '~/audio/live'
-import { renderOffline } from '~/audio/render'
+import { renderRecipe } from '~/library/recipes'
 import { chordsOf, keyName, progressionVoice } from '~/chords/progression'
 import { chordName, NOTE_NAMES, progressionPresets, roman } from '~/chords/theory'
 import type { ParamDef } from '~/synth/spec'
@@ -84,12 +83,12 @@ async function save() {
   saving.value = true
   try {
     const spec = toPlain(chords.spec)
-    const rendered = await renderOffline(progressionVoice(spec))
+    const recipe = { type: 'chords', spec } as const
     await library.add({
       name: chords.name,
       kind: 'synth',
-      channels: bufferToChannels(rendered),
-      recipe: { type: 'chords', spec },
+      channels: await renderRecipe(recipe, library.sourceBuffer),
+      recipe,
       analysis: { bpm: spec.bpm, key: keyName(spec) },
     })
   } finally {

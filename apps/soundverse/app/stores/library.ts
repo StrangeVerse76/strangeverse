@@ -8,6 +8,7 @@ import { computePeaks, peakLevel } from '~/audio/peaks'
 import { encodeWav } from '~/audio/wav'
 import * as storage from '~/library/db'
 import { filterClips, type ClipFilter } from '~/library/filter'
+import { renderRecipe } from '~/library/recipes'
 import { analyze, MIN_ANALYSIS_SECONDS } from '~/analysis/analyze'
 import type { Clip, ClipAnalysis, ClipKind, ClipRecipe } from '~/library/types'
 
@@ -185,6 +186,18 @@ export const useLibraryStore = defineStore('library', {
       const buffer = await decodeAudio(await audio.arrayBuffer())
       buffers.set(id, buffer)
       return buffer
+    },
+
+    /** Rifà l'audio di un clip dalla sua ricetta (i clip importati e registrati non si rifanno). */
+    async renderClip(id: string) {
+      const clip = this.clips.find((c) => c.id === id)
+      if (!clip) throw new Error(`Clip ${id} non trovato`)
+      return renderRecipe(clip.recipe, this.sourceBuffer)
+    },
+
+    /** Come `getBuffer`, ma `undefined` se il clip non è (più) in libreria. Per `renderRecipe`. */
+    async sourceBuffer(id: string): Promise<AudioBuffer | undefined> {
+      return this.clips.some((c) => c.id === id) ? this.getBuffer(id) : undefined
     },
 
     async download(id: string) {

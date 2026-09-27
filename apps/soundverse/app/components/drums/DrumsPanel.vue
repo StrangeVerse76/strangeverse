@@ -1,17 +1,8 @@
 <script setup lang="ts">
 import { toPlain } from '~/utils/plain'
-import { SAMPLE_RATE } from '~/audio/constants'
 import { unlockAudio } from '~/audio/context'
-import { renderOffline } from '~/audio/render'
-import {
-  drumParams,
-  foldTail,
-  MAX_BARS,
-  patternLength,
-  patternVoice,
-  STEPS_PER_BAR,
-  VELOCITY_ACCENT,
-} from '~/drums/pattern'
+import { renderRecipe } from '~/library/recipes'
+import { drumParams, MAX_BARS, STEPS_PER_BAR, VELOCITY_ACCENT } from '~/drums/pattern'
 import { DrumSequencer } from '~/drums/sequencer'
 import { voiceIds, voiceLabels, type DrumVoiceId } from '~/drums/voices'
 import { useDrumsStore } from '~/stores/drums'
@@ -91,14 +82,12 @@ onBeforeUnmount(() => {
 async function save() {
   saving.value = true
   try {
-    const pattern = toPlain(drums.pattern)
-    const rendered = await renderOffline(patternVoice(pattern))
-    const length = Math.round(patternLength(pattern) * SAMPLE_RATE)
+    const recipe = { type: 'drums', pattern: toPlain(drums.pattern) } as const
     await library.add({
       name: drums.name,
       kind: 'drums',
-      channels: [foldTail(rendered.getChannelData(0), length)],
-      recipe: { type: 'drums', pattern },
+      channels: await renderRecipe(recipe, library.sourceBuffer),
+      recipe,
     })
   } finally {
     saving.value = false

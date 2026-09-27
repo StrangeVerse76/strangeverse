@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { unlockAudio } from '~/audio/context'
-import { bufferToChannels } from '~/audio/decode'
+import { renderRecipe } from '~/library/recipes'
 import { playLive, type LiveVoice } from '~/audio/live'
-import { renderOffline } from '~/audio/render'
 import { synthVoice } from '~/synth/graph'
 import {
   effectLabels,
@@ -58,13 +57,12 @@ async function togglePlay() {
 async function save() {
   saving.value = true
   try {
-    const spec = normalizeSpec(synth.spec)
-    const buffer = await renderOffline(synthVoice(spec))
+    const recipe = { type: 'synth', spec: normalizeSpec(synth.spec) } as const
     await library.add({
       name: synth.name,
       kind: 'synth',
-      channels: bufferToChannels(buffer),
-      recipe: { type: 'synth', spec },
+      channels: await renderRecipe(recipe, library.sourceBuffer),
+      recipe,
     })
   } finally {
     saving.value = false
