@@ -21,7 +21,16 @@ export interface Placement {
   fadeOut: number
   /** Quante volte il clip si ripete di seguito (1 = una volta). */
   repeat: number
+  /**
+   * Rifilatura: da dove parte il segmento dentro il clip (s) e quanto dura (s; `null` = fino alla fine).
+   * Facoltativi, così i progetti salvati prima della rifilatura restano validi.
+   */
+  offset?: number
+  length?: number | null
 }
+
+/** Lunghezza minima di un segmento rifilato (s). */
+export const MIN_SEGMENT = 0.01
 
 export interface TimelineProject {
   bpm: number
@@ -52,8 +61,25 @@ export function snapToBeat(time: number, bpm: number): number {
   return Math.max(0, Math.round(time / beat) * beat)
 }
 
+/** Il segmento del clip usato dal blocco, già riportato nei limiti del clip. */
+export function segment(placement: Placement, clipDuration: number) {
+  if (clipDuration <= 0) return { offset: 0, length: 0 }
+  const offset = Math.min(
+    Math.max(0, placement.offset ?? 0),
+    Math.max(0, clipDuration - MIN_SEGMENT),
+  )
+  const available = clipDuration - offset
+  const wanted = placement.length ?? available
+  return { offset, length: Math.min(available, Math.max(MIN_SEGMENT, wanted)) }
+}
+
+/** Durata di una ripetizione: il segmento rifilato. */
+export function repeatLength(placement: Placement, durations: Durations): number {
+  return segment(placement, durations.get(placement.clipId) ?? 0).length
+}
+
 export function blockLength(placement: Placement, durations: Durations): number {
-  return (durations.get(placement.clipId) ?? 0) * Math.max(1, Math.round(placement.repeat))
+  return repeatLength(placement, durations) * Math.max(1, Math.round(placement.repeat))
 }
 
 /** Fine dell'ultimo blocco: la durata del mix. */
@@ -134,20 +160,20 @@ export function schedulePlays(
 ): ScheduledPlay[] {
   const plays: ScheduledPlay[] = []
   for (const placement of project.placements) {
-    const clipLength = durations.get(placement.clipId) ?? 0
-    if (clipLength <= 0) continue
+    const { offset: clipOffset, length } = segment(placement, durations.get(placement.clipId) ?? 0)
+    if (length <= 0) continue
     const repeats = Math.max(1, Math.round(placement.repeat))
     for (let k = 0; k < repeats; k++) {
-      const repStart = placement.start + k * clipLength
-      const repEnd = repStart + clipLength
+      const repStart = placement.start + k * length
+      const repEnd = repStart + length
       if (repEnd <= from) continue
-      const offset = Math.max(0, from - repStart)
+      const inner = Math.max(0, from - repStart)
       plays.push({
         placementId: placement.id,
         clipId: placement.clipId,
-        at: repStart + offset,
-        offset,
-        duration: clipLength - offset,
+        at: repStart + inner,
+        offset: clipOffset + inner,
+        duration: length - inner,
       })
     }
   }
