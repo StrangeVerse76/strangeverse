@@ -1,4 +1,5 @@
 import type { ParamDef } from '~/synth/spec'
+import type { PadMixer } from './bus'
 import { newPattern, type PadPattern, type SequencerSettings } from './pattern'
 
 export const BANKS = ['A', 'B', 'C', 'D'] as const
@@ -29,6 +30,8 @@ export interface Kit {
   /** Pattern del sequencer. Facoltativi: i kit salvati prima non li hanno. */
   patterns?: PadPattern[]
   sequencer?: SequencerSettings
+  /** Il canale "Pad" del mixer. Facoltativo. */
+  mixer?: PadMixer
 }
 
 export const defaultSequencer = (): SequencerSettings => ({
@@ -62,6 +65,7 @@ export function newKit(name: string): Kit {
     updatedAt: Date.now(),
     patterns: [newPattern(1)],
     sequencer: defaultSequencer(),
+    mixer: { gain: 1, muted: false },
   }
 }
 

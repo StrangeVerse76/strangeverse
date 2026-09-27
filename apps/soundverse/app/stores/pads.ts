@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import * as storage from '~/library/db'
 import { BANKS, defaultSequencer, newKit, type Bank, type Kit } from '~/pads/kit'
 import type { LevelParam, PadOverrides } from '~/pads/levels'
+import { defaultPadMixer, type PadMixer } from '~/pads/bus'
 import {
   addEvent,
   newPattern,
@@ -16,6 +17,7 @@ import {
 function withSequencer(kit: Kit): Kit {
   if (!kit.patterns?.length) kit.patterns = [newPattern(1)]
   if (!kit.sequencer) kit.sequencer = defaultSequencer()
+  if (!kit.mixer) kit.mixer = defaultPadMixer()
   return kit
 }
 
@@ -59,6 +61,7 @@ export const usePadsStore = defineStore('pads', {
       return this.patterns[this.patternIndex] ?? this.patterns[0] ?? newPattern(1)
     },
     settings: (state) => state.kit.sequencer ?? defaultSequencer(),
+    mixer: (state): PadMixer => state.kit.mixer ?? defaultPadMixer(),
   },
 
   actions: {

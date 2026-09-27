@@ -1,3 +1,4 @@
+import type { ChannelMix, Returns } from '~/mixer/mixer'
 import type { ParamDef } from '~/synth/spec'
 
 export interface TimelineTrack {
@@ -6,6 +7,8 @@ export interface TimelineTrack {
   /** Livello lineare, 0..1. */
   gain: number
   muted: boolean
+  /** Pan, solo, EQ e mandate del mixer. Facoltativo: i progetti di prima non ce l'hanno. */
+  mix?: Partial<ChannelMix>
 }
 
 /** Un clip della libreria posato sulla timeline. */
@@ -37,6 +40,8 @@ export interface TimelineProject {
   master: number
   tracks: TimelineTrack[]
   placements: Placement[]
+  /** Ritorni degli effetti del mixer. Facoltativo. */
+  returns?: Returns
 }
 
 export const timelineParams = {

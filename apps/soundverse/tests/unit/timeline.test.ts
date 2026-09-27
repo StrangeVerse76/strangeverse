@@ -134,9 +134,10 @@ describe('timelineVoice', () => {
     ['c2', buffer(1)],
   ])
 
-  it('collega sorgenti → dissolvenza → clip → traccia → master e parte al punto giusto', () => {
+  it('collega sorgenti → dissolvenza → clip → traccia → pan → master e parte al punto giusto', () => {
     const p = project([placement({ start: 1, repeat: 2 })])
-    const voice = timelineVoice(p, buffers, 2)
+    const registry = emptyRegistry()
+    const voice = timelineVoice(p, buffers, 2, registry)
     expect(voice.duration).toBe(3) // fine 5, partenza 2
 
     const { fake, context } = fakeContext()
@@ -144,11 +145,18 @@ describe('timelineVoice', () => {
     const sources = fake.created.filter((n) => n.kind === 'buffersource')
     // Ripetizione 1 (1..3) ripresa a 2 → parte subito (10); ripetizione 2 a 3 → 11.
     expect(sources.flatMap((s) => s.started)).toEqual([10, 11])
-    const [master, track, clipGain, fade] = fake.created.filter((n) => n.kind === 'gain')
-    expect(master?.outputs).toEqual(['destination#0'])
-    expect(track?.outputs).toEqual([master?.id])
-    expect(clipGain?.outputs).toEqual([track?.id])
-    expect(fade?.outputs).toEqual([clipGain?.id])
+
+    const id = (node: unknown) => (node as { id: string }).id
+    const outputs = (node: unknown) => (node as { outputs: string[] }).outputs
+    const master = registry.master
+    const track = registry.tracks.get('t1')
+    const strip = registry.strips.get('t1')
+    const clipGain = registry.placements.get('p1')
+    const fade = fake.created.find((n) => n.outputs.includes(id(clipGain)))
+    expect(outputs(master)).toEqual(['destination#0'])
+    expect(outputs(track)).toEqual([id(strip?.panner)])
+    expect(outputs(strip?.panner)[0]).toBe(id(master))
+    expect(outputs(clipGain)).toEqual([id(track)])
     expect(sources.every((s) => s.outputs[0] === fade?.id)).toBe(true)
   })
 

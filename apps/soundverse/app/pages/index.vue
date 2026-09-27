@@ -26,6 +26,9 @@ useSeoMeta({
       <StudioPanel title="Registra">
         <RecordPanel />
       </StudioPanel>
+      <StudioPanel title="Mixer">
+        <MixerPanel />
+      </StudioPanel>
       <StudioPanel title="Synth">
         <SynthPanel />
       </StudioPanel>

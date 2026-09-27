@@ -260,22 +260,26 @@ function onRuler(event: PointerEvent) {
   seekTo((event.clientX - rect.left) / timeline.zoom)
 }
 
-// Volumi "vivi": cambiano mentre suona, senza ripartire.
+// Volumi, pan, solo e mandate "vivi": cambiano mentre suona, senza ripartire.
 watch(
   () => [
     project.value.master,
-    project.value.tracks.map((t) => [t.gain, t.muted]),
+    project.value.tracks.map((t) => [t.gain, t.muted, t.mix?.pan, t.mix?.solo, t.mix?.sends]),
     project.value.placements.map((p) => p.gain),
+    project.value.returns?.levels,
+    project.value.returns?.delayTime,
+    project.value.returns?.delayFeedback,
   ],
   () => transport?.updateGains(project.value),
   { deep: true },
 )
 
-// Modifiche alla struttura mentre suona: si riparte dal punto raggiunto.
+// Modifiche alla struttura mentre suona (anche EQ e durata del riverbero): si riparte dal punto raggiunto.
 watch(
   () =>
     JSON.stringify([
-      project.value.tracks.map((t) => t.id),
+      project.value.tracks.map((t) => [t.id, t.mix?.eq ?? null]),
+      project.value.returns?.reverbSize,
       project.value.placements.map((p) => [
         p.id,
         p.clipId,
@@ -284,6 +288,8 @@ watch(
         p.repeat,
         p.fadeIn,
         p.fadeOut,
+        p.offset,
+        p.length,
       ]),
     ]),
   () => {

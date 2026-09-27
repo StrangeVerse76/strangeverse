@@ -2,6 +2,7 @@ import { unlockAudio } from '~/audio/context'
 import { useLibraryStore } from '~/stores/library'
 import { usePadsStore } from '~/stores/pads'
 import type { PadOverrides } from './levels'
+import { livePadBus } from './bus'
 import { PadSequencer, type RepeatNote } from './sequencer'
 
 /**
@@ -43,7 +44,7 @@ export function usePadSequencer() {
   async function play() {
     const { context, master } = unlockAudio()
     await preload()
-    sequencer ??= new PadSequencer(context, master, {
+    sequencer ??= new PadSequencer(context, livePadBus(context, master, pads.mixer), {
       pattern: () => pads.pattern,
       settings: () => pads.settings,
       pads: () => pads.kit.pads,

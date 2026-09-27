@@ -92,6 +92,10 @@ export class FakeAudioContext {
   createConvolver = () => this.track(new FakeNode('convolver'))
   createWaveShaper = () => this.track(new FakeNode('waveshaper'))
   createBufferSource = () => this.track(new FakeNode('buffersource', ['playbackRate']))
+  createStereoPanner = () => this.track(new FakeNode('panner', ['pan']))
+  createIIRFilter = () => this.track(new FakeNode('iir'))
+  createChannelSplitter = () => this.track(new FakeNode('splitter'))
+  createChannelMerger = () => this.track(new FakeNode('merger'))
   createBuffer = (channels: number, length: number, sampleRate: number) => ({
     channels,
     length,
