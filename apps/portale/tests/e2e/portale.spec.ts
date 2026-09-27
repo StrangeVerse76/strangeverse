@@ -67,3 +67,18 @@ test('la pagina non scorre in orizzontale', async ({ page }) => {
   )
   expect(overflow).toBe(0)
 })
+
+test('ogni elemento dell’header sta dentro lo schermo', async ({ page }) => {
+  await page.goto('/')
+  const width = page.viewportSize()?.width ?? 0
+  const header = page.getByRole('banner')
+  for (const item of [
+    header.getByRole('link', { name: 'StrangeVerse' }),
+    header.getByRole('link', { name: 'Chi sono' }),
+    header.getByRole('button', { name: /Passa al tema/ }),
+  ]) {
+    const box = await item.boundingBox()
+    expect(box?.x ?? -1).toBeGreaterThanOrEqual(0)
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width)
+  }
+})

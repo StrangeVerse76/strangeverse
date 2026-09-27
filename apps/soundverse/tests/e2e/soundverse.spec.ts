@@ -42,3 +42,20 @@ test('la pagina Licenze cita l’encoder MP3 e la sua licenza', async ({ page })
   await expect(page).toHaveTitle('Licenze · Soundverse')
   await expect(page.getByRole('link', { name: 'GNU LGPL 3.0' })).toBeVisible()
 })
+
+test('ogni elemento dell’header sta dentro lo schermo', async ({ page }) => {
+  await page.goto('/')
+  const width = page.viewportSize()?.width ?? 0
+  const header = page.getByRole('banner')
+  for (const item of [
+    header.getByRole('link', { name: 'StrangeVerse' }),
+    header.getByRole('link', { name: 'Soundverse' }),
+    header.getByRole('link', { name: 'Licenze' }),
+    header.getByRole('button', { name: /Passa al tema/ }),
+  ]) {
+    const box = await item.boundingBox()
+    expect(box, await item.textContent()).not.toBeNull()
+    expect(box?.x ?? -1).toBeGreaterThanOrEqual(0)
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width)
+  }
+})

@@ -26,6 +26,9 @@ useSeoMeta({
       <StudioPanel title="Campioni">
         <SamplePanel />
       </StudioPanel>
+      <StudioPanel title="Accordi">
+        <ChordsPanel />
+      </StudioPanel>
     </div>
 
     <StudioPanel title="Libreria" class="studio__library">
