@@ -38,6 +38,28 @@ class Bitcrusher extends AudioWorkletProcessor {
   }
 }
 registerProcessor('sv-bitcrusher', Bitcrusher)
+
+// Registratore: copia i campioni dell'ingresso e li manda al thread principale, senza compressione.
+// Attivo solo quando riceve { recording: true }, così il misuratore di livello funziona anche da fermo.
+class Recorder extends AudioWorkletProcessor {
+  constructor() {
+    super()
+    this.recording = false
+    this.port.onmessage = (event) => {
+      this.recording = !!event.data.recording
+    }
+  }
+
+  process(inputs) {
+    const input = inputs[0]
+    if (this.recording && input && input.length) {
+      const channels = input.map((channel) => channel.slice())
+      this.port.postMessage(channels, channels.map((c) => c.buffer))
+    }
+    return true
+  }
+}
+registerProcessor('sv-recorder', Recorder)
 `
 
 const loaded = new WeakMap<BaseAudioContext, Promise<void>>()
