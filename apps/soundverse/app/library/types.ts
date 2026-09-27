@@ -14,6 +14,7 @@ export type ClipKind = 'synth' | 'drums' | 'sample' | 'mix'
  */
 export type ClipRecipe =
   | { type: 'import'; fileName: string }
+  | { type: 'recording'; device: string }
   | { type: 'synth'; spec: SynthSpec }
   | { type: 'drums'; pattern: DrumPattern }
   | { type: 'sample'; sourceId: string; sourceName: string; ops: SampleOp[] }

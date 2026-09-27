@@ -17,6 +17,11 @@ export default defineConfig({
   use: {
     baseURL: baseURL ?? `http://localhost:${port}`,
     trace: 'on-first-retry',
+    // Microfono finto di Chrome (un tono di prova), senza la richiesta di permesso.
+    permissions: ['microphone'],
+    launchOptions: {
+      args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+    },
     ...(channel ? { channel } : {}),
   },
   projects: [
