@@ -161,3 +161,50 @@ test('eliminando un clip dalla libreria sparisce anche dalla timeline', async ({
   await library(page).getByRole('button', { name: 'Elimina', exact: true }).click()
   await expect(timeline(page).getByRole('listitem', { name: /temporaneo/ })).toHaveCount(0)
 })
+
+test('rifilatura dall’ispettore e trascinando i bordi; il render ne tiene conto', async ({
+  page,
+}) => {
+  await importTone(page, 'quattro', 4)
+  await addToTimeline(page, 'quattro')
+  await expect(clock(page)).toHaveText('0:00.0 / 0:04.0')
+
+  const inspector = timeline(page).getByRole('region', { name: 'Blocco selezionato' })
+  const length = inspector.getByRole('slider', { name: 'Lunghezza' })
+  await length.focus()
+  await page.keyboard.press('PageDown') // -10% di 4 s
+  await expect(length).toHaveAttribute('aria-valuetext', '3.60 s')
+  await expect(clock(page)).toHaveText('0:00.0 / 0:03.6')
+
+  // Bordo destro trascinato di 60 px (1 s a 60 px/s) verso sinistra: la fine si aggancia a 2,5 s.
+  const block = timeline(page).getByRole('listitem', { name: /quattro/ })
+  await block.scrollIntoViewIfNeeded()
+  const right = block.getByTestId('trim-right')
+  const box = await right.boundingBox()
+  if (!box) throw new Error('bordo non visibile')
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x - 30, box.y + box.height / 2, { steps: 3 })
+  await page.mouse.move(box.x - 64, box.y + box.height / 2, { steps: 3 })
+  await page.mouse.up()
+  await expect(length).toHaveAttribute('aria-valuetext', '2.50 s')
+
+  // Bordo sinistro 30 px a destra (0,5 s): inizio del blocco e inizio nel clip avanzano insieme.
+  const left = block.getByTestId('trim-left')
+  const lbox = await left.boundingBox()
+  if (!lbox) throw new Error('bordo non visibile')
+  await page.mouse.move(lbox.x + 2, lbox.y + lbox.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(lbox.x + 32, lbox.y + lbox.height / 2, { steps: 4 })
+  await page.mouse.up()
+  await expect(inspector.getByRole('slider', { name: 'Inizio clip' })).toHaveAttribute(
+    'aria-valuetext',
+    '500 ms',
+  )
+  await expect(length).toHaveAttribute('aria-valuetext', '2.00 s')
+  await expect(timeline(page).getByRole('listitem', { name: 'quattro a 0:00.5' })).toBeVisible()
+
+  await timeline(page).getByRole('textbox', { name: 'Nome del mix' }).fill('Rifilato')
+  await timeline(page).getByRole('button', { name: 'Renderizza in libreria' }).click()
+  await expect(clipButton(page, 'Rifilato')).toContainText('Mix · 0:02.5 · stereo')
+})

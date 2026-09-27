@@ -5,9 +5,12 @@ import { renderOffline } from '~/audio/render'
 import { useLibraryStore } from '~/stores/library'
 import { useTimelineStore } from '~/stores/timeline'
 import { limitPeak, timelineVoice } from '~/timeline/graph'
+import type { ParamDef } from '~/synth/spec'
 import {
   blockLength,
+  MIN_SEGMENT,
   projectEnd,
+  segment,
   snapToBeat,
   timelineParams,
   type Placement,
@@ -53,6 +56,94 @@ const blockStyle = (p: Placement) => ({
   left: `${p.start * timeline.zoom}px`,
   width: `${Math.max(4, (isMissing(p) ? MISSING_SECONDS : blockLength(p, durations.value)) * timeline.zoom)}px`,
 })
+// --- Rifilatura ---
+
+const selectedDuration = computed(() => {
+  const p = timeline.selected
+  return p ? (durations.value.get(p.clipId) ?? 0) : 0
+})
+const selectedSegment = computed(() =>
+  timeline.selected ? segment(timeline.selected, selectedDuration.value) : { offset: 0, length: 0 },
+)
+const offsetDef = computed<ParamDef>(() => ({
+  label: 'Inizio clip',
+  unit: 's',
+  min: 0,
+  max: Math.max(0, selectedDuration.value - MIN_SEGMENT),
+  step: 0.01,
+  default: 0,
+}))
+const lengthDef = computed<ParamDef>(() => ({
+  label: 'Lunghezza',
+  unit: 's',
+  min: MIN_SEGMENT,
+  max: Math.max(MIN_SEGMENT, selectedDuration.value - selectedSegment.value.offset),
+  step: 0.01,
+  default: Math.max(MIN_SEGMENT, selectedDuration.value - selectedSegment.value.offset),
+}))
+const trimOffset = computed({
+  get: () => selectedSegment.value.offset,
+  set: (value: number) => {
+    const p = timeline.selected
+    if (!p) return
+    p.offset = value
+    // La lunghezza non può superare quello che resta del clip.
+    if (p.length != null) p.length = Math.min(p.length, selectedDuration.value - value)
+  },
+})
+const trimLength = computed({
+  get: () => selectedSegment.value.length,
+  set: (value: number) => {
+    if (timeline.selected) timeline.selected.length = value
+  },
+})
+
+let trim: {
+  placement: Placement
+  edge: 'left' | 'right'
+  x: number
+  start: number
+  offset: number
+  length: number
+  duration: number
+} | null = null
+
+/** Trascinando un bordo si rifila: a sinistra si sposta l'inizio del segmento, a destra la fine. */
+function onEdgeDown(event: PointerEvent, placement: Placement, edge: 'left' | 'right') {
+  event.stopPropagation()
+  timeline.selectedId = placement.id
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  const duration = durations.value.get(placement.clipId) ?? 0
+  const seg = segment(placement, duration)
+  trim = { placement, edge, x: event.clientX, start: placement.start, ...seg, duration }
+}
+
+function onEdgeMove(event: PointerEvent) {
+  if (!trim) return
+  event.stopPropagation()
+  const dt = (event.clientX - trim.x) / timeline.zoom
+  const snap = (t: number) => (event.shiftKey ? t : snapToBeat(t, project.value.bpm))
+  const p = trim.placement
+  if (trim.edge === 'left') {
+    const minDelta = -trim.offset
+    const maxDelta = trim.length - MIN_SEGMENT
+    const delta = Math.min(maxDelta, Math.max(minDelta, snap(trim.start + dt) - trim.start))
+    p.start = trim.start + delta
+    p.offset = trim.offset + delta
+    p.length = trim.length - delta
+  } else {
+    const repeats = Math.max(1, Math.round(p.repeat))
+    const end = snap(trim.start + trim.length * repeats + dt)
+    const length = (end - trim.start) / repeats
+    p.length = Math.min(trim.duration - trim.offset, Math.max(MIN_SEGMENT, length))
+  }
+}
+
+function onEdgeUp(event: PointerEvent) {
+  event.stopPropagation()
+  trim = null
+}
+
 const missingCount = computed(() => project.value.placements.filter(isMissing).length)
 const confirmingDelete = ref(false)
 
@@ -420,8 +511,22 @@ async function render() {
               @pointercancel="onBlockUp"
               @keydown="onBlockKey($event, p)"
             >
+              <span
+                class="block__edge block__edge--left"
+                data-testid="trim-left"
+                @pointerdown="onEdgeDown($event, p, 'left')"
+                @pointermove="onEdgeMove"
+                @pointerup="onEdgeUp"
+              />
               <span class="block__name">{{ clipName(p) }}</span>
               <span v-if="p.repeat > 1" class="block__repeat">×{{ p.repeat }}</span>
+              <span
+                class="block__edge block__edge--right"
+                data-testid="trim-right"
+                @pointerdown="onEdgeDown($event, p, 'right')"
+                @pointermove="onEdgeMove"
+                @pointerup="onEdgeUp"
+              />
             </button>
           </div>
           <div class="playhead" :style="{ left: `${shownTime * timeline.zoom}px` }" />
@@ -442,6 +547,10 @@ async function render() {
       <ControlKnob v-model="timeline.selected.fadeIn" :def="timelineParams.fadeIn" />
       <ControlKnob v-model="timeline.selected.fadeOut" :def="timelineParams.fadeOut" />
       <ControlKnob v-model="timeline.selected.repeat" :def="timelineParams.repeat" />
+      <template v-if="selectedDuration > 0">
+        <ControlKnob v-model="trimOffset" :def="offsetDef" />
+        <ControlKnob v-model="trimLength" :def="lengthDef" />
+      </template>
       <label class="inspector__track">
         Traccia
         <select v-model="timeline.selected.trackId" class="field">
@@ -645,6 +754,26 @@ async function render() {
   border-color: var(--color-danger);
   background: transparent;
   color: var(--color-danger);
+}
+
+.block__edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.block__edge--left {
+  left: 0;
+}
+
+.block__edge--right {
+  right: 0;
+}
+
+.block__edge:hover {
+  background: color-mix(in srgb, var(--color-accent) 45%, transparent);
 }
 
 .block__name {

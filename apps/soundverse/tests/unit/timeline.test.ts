@@ -5,8 +5,10 @@ import {
   defaultProject,
   fadeEvents,
   fadeGainAt,
+  MIN_SEGMENT,
   projectEnd,
   schedulePlays,
+  segment,
   snapToBeat,
   type Placement,
   type TimelineProject,
@@ -192,5 +194,48 @@ describe('limitPeak e progetto predefinito', () => {
     const p = defaultProject()
     expect(p.tracks).toHaveLength(2)
     expect(p.placements).toEqual([])
+  })
+})
+
+describe('rifilatura', () => {
+  const clip = new Map([['c1', 4]])
+
+  it('il segmento resta nei limiti del clip', () => {
+    expect(segment(placement(), 4)).toEqual({ offset: 0, length: 4 })
+    expect(segment(placement({ offset: 1, length: 2 }), 4)).toEqual({ offset: 1, length: 2 })
+    expect(segment(placement({ offset: 3, length: 5 }), 4)).toEqual({ offset: 3, length: 1 })
+    expect(segment(placement({ offset: -1, length: 0 }), 4)).toEqual({
+      offset: 0,
+      length: MIN_SEGMENT,
+    })
+    expect(segment(placement({ offset: 10 }), 4).offset).toBeCloseTo(4 - MIN_SEGMENT)
+  })
+
+  it('le ripetizioni usano il segmento, e ognuna parte dall’inizio del segmento', () => {
+    const p = project([placement({ start: 2, offset: 1, length: 1.5, repeat: 2 })])
+    expect(blockLength(p.placements[0] as Placement, clip)).toBe(3)
+    expect(schedulePlays(p, clip, 0).map((x) => [x.at, x.offset, x.duration])).toEqual([
+      [2, 1, 1.5],
+      [3.5, 1, 1.5],
+    ])
+  })
+
+  it('riprendendo dentro un segmento rifilato l’offset tiene conto di entrambi', () => {
+    const p = project([placement({ start: 2, offset: 1, length: 1.5, repeat: 2 })])
+    expect(schedulePlays(p, clip, 4).map((x) => [x.at, x.offset, x.duration])).toEqual([
+      [4, 1.5, 1],
+    ])
+  })
+
+  it('il grafo passa alla sorgente l’offset e la durata del segmento', () => {
+    const buffers = new Map([['c1', { duration: 4 } as AudioBuffer]])
+    const p = project([placement({ start: 0, offset: 0.5, length: 1 })])
+    const { fake, context } = fakeContext()
+    const voice = timelineVoice(p, buffers, 0)
+    expect(voice.duration).toBe(1)
+    voice.build(context, context.destination, 0)
+    expect(fake.created.filter((n) => n.kind === 'buffersource').flatMap((n) => n.started)).toEqual(
+      [0],
+    )
   })
 })
