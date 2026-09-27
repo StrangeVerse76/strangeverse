@@ -115,6 +115,7 @@ describe('formatParam', () => {
     expect(formatParam(1.5, 's')).toBe('1.50 s')
     expect(formatParam(3, 'dB')).toBe('+3.0 dB')
     expect(formatParam(-7, 'ct')).toBe('-7 ct')
+    expect(formatParam(3, 'st')).toBe('+3 st')
     expect(formatParam(8, '', 1)).toBe('8')
     expect(formatParam(0.5, '')).toBe('0.50')
   })

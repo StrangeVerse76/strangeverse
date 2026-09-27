@@ -13,6 +13,11 @@ export interface Oscillator {
   gain: number
   /** Centesimi di semitono. */
   detune: number
+  /**
+   * Caduta di intonazione (cassa, tom): la frequenza parte da `frequency × ratio`
+   * e scende a `frequency` in `time` secondi. Non è esposta nel pannello del synth.
+   */
+  sweep?: { ratio: number; time: number }
 }
 
 export interface Noise {
@@ -193,6 +198,12 @@ export function normalizeSpec(spec: SynthSpec): SynthSpec {
       frequency: clampTo(osc.frequency, params.frequency),
       gain: clampTo(osc.gain, params.oscGain),
       detune: clampTo(osc.detune, params.detune),
+      ...(osc.sweep && {
+        sweep: {
+          ratio: Math.min(16, Math.max(1, osc.sweep.ratio)),
+          time: Math.min(2, Math.max(0.001, osc.sweep.time)),
+        },
+      }),
     })),
     noise: spec.noise && {
       color: spec.noise.color,

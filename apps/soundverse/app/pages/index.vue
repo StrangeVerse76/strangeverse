@@ -20,7 +20,9 @@ useSeoMeta({
       <StudioPanel title="Synth">
         <SynthPanel />
       </StudioPanel>
-      <StudioPanel title="Batteria" :coming-in="10" />
+      <StudioPanel title="Batteria">
+        <DrumsPanel />
+      </StudioPanel>
       <StudioPanel title="Campioni" :coming-in="11" />
     </div>
 

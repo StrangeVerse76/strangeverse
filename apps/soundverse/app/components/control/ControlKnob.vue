@@ -7,6 +7,8 @@ const props = defineProps<{
   def: ParamDef
   /** Etichetta da mostrare, se diversa da quella del parametro. */
   label?: string
+  /** Nome per i lettori di schermo, se serve più preciso dell'etichetta (es. "Volume Cassa"). */
+  ariaLabel?: string
 }>()
 
 const model = defineModel<number>({ required: true })
@@ -18,6 +20,7 @@ const FINE_FACTOR = 4
 const SWEEP = 270
 
 const name = computed(() => props.label ?? props.def.label)
+const accessibleName = computed(() => props.ariaLabel ?? name.value)
 const position = computed(() => toNormalized(model.value, props.def))
 const text = computed(() => formatParam(model.value, props.def.unit, props.def.step))
 
@@ -105,7 +108,7 @@ const tip = computed(() => point(position.value))
       class="knob__dial"
       role="slider"
       tabindex="0"
-      :aria-label="name"
+      :aria-label="accessibleName"
       :aria-valuemin="def.min"
       :aria-valuemax="def.max"
       :aria-valuenow="model"

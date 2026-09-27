@@ -1,3 +1,4 @@
+import type { DrumPattern } from '~/drums/pattern'
 import type { SynthSpec } from '~/synth/spec'
 
 export type ClipKind = 'synth' | 'drums' | 'sample' | 'mix'
@@ -6,7 +7,10 @@ export type ClipKind = 'synth' | 'drums' | 'sample' | 'mix'
  * Come è nato un clip: la "ricetta" che permette di rifarlo o di ripartire da lì.
  * Ogni pannello aggiunge qui la sua variante (synth, batteria, operazioni sui campioni, mix).
  */
-export type ClipRecipe = { type: 'import'; fileName: string } | { type: 'synth'; spec: SynthSpec }
+export type ClipRecipe =
+  | { type: 'import'; fileName: string }
+  | { type: 'synth'; spec: SynthSpec }
+  | { type: 'drums'; pattern: DrumPattern }
 
 /** Metadati di un clip. L'audio (WAV) è salvato a parte, con lo stesso `id`. */
 export interface Clip {
