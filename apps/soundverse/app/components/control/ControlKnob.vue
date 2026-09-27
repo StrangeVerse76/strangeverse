@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ParamDef } from '~/synth/spec'
+import { registerKnob, touchKnob } from '~/midi/knobs'
 import { formatParam } from '~/utils/format'
 import { clamp, fromNormalized, roundTo, toNormalized } from '~/utils/scale'
 
@@ -52,7 +53,23 @@ function nudge(direction: 1 | -1, big = false) {
 
 let dragStart: { y: number; position: number } | null = null
 
+// Registrata per nome, solo nel browser: un controller MIDI mappato su questo nome la muove.
+const handle = { setPosition }
+let unregister: (() => void) | null = null
+onMounted(() => {
+  watch(
+    accessibleName,
+    (name) => {
+      unregister?.()
+      unregister = registerKnob(name, handle)
+    },
+    { immediate: true },
+  )
+})
+onBeforeUnmount(() => unregister?.())
+
 function onPointerDown(event: PointerEvent) {
+  touchKnob(accessibleName.value, handle)
   ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
   dragStart = { y: event.clientY, position: position.value }
 }
@@ -129,6 +146,7 @@ const tip = computed(() => point(position.value))
       @pointercancel="onPointerUp"
       @wheel.prevent="onWheel"
       @keydown="onKeydown"
+      @focus="touchKnob(accessibleName, handle)"
       @dblclick="set(def.default)"
     >
       <svg viewBox="0 0 40 40" aria-hidden="true">
