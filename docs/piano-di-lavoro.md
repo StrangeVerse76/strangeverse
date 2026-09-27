@@ -222,6 +222,8 @@ Vedi §7 per il dettaglio. MVP in un paio di iterazioni, poi evoluzioni guidate 
 
 ## 7. Sotto-app Musica — prima proposta
 
+> **Superata**: la prima sotto-app è **Soundverse** ([ADR 0006](decisioni/0006-soundverse-al-posto-di-musica.md)). Questa sezione resta come riferimento.
+
 ### 7.1 MVP: step sequencer
 
 - Griglia **16 step × N tracce** (kick, snare, hi-hat, clap, basso, synth)

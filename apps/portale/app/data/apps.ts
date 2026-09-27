@@ -19,10 +19,10 @@ export interface AppEntry {
 
 export const apps: AppEntry[] = [
   {
-    id: 'musica',
-    name: 'Musica',
+    id: 'soundverse',
+    name: 'Soundverse',
     description:
-      'Uno step sequencer nel browser: batteria, basso e synth su una griglia a 16 passi.',
+      'Uno studio audio nel browser: synth, campioni, equalizzatore e una timeline per comporre.',
     icon: '🎛️',
     status: 'coming-soon',
     url: null,

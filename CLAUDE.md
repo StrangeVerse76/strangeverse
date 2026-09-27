@@ -1,6 +1,6 @@
 # CLAUDE.md — StrangeVerse
 
-Sito personale che fa da **hub** per una serie di **sotto-applicativi** indipendenti (la prima è un'app per fare musica: uno step sequencer).
+Sito personale che fa da **hub** per una serie di **sotto-applicativi** indipendenti (la prima è **Soundverse**, uno studio audio nel browser).
 Uso personale, non commerciale, tutto su piani gratuiti. Piano completo: [`docs/piano-di-lavoro.md`](docs/piano-di-lavoro.md).
 
 ## Comandi
@@ -30,7 +30,7 @@ Playwright:
 ```
 apps/                 # un'app Nuxt per cartella, ognuna con il proprio progetto Vercel
   portale/            # hub: home, catalogo app (app/data/apps.ts), chi sono
-  musica/             # (Fase 6) step sequencer
+  soundverse/         # (Fase 6) studio audio nel browser (ex Musica, vedi ADR 0006)
 packages/
   config/             # ESLint, TypeScript, Prettier condivisi (@strangeverse/config)
   ui/                 # Nuxt Layer condiviso: tema, layout, header, 404 (@strangeverse/ui)
@@ -48,6 +48,7 @@ docs/
 
 ### Layer `@strangeverse/ui`
 
+- Il `build` del layer esegue solo `nuxt prepare`: genera `packages/ui/.nuxt/`, che serve alla build delle app (Vite legge il tsconfig del layer). Turborepo lo lancia prima delle app grazie a `dependsOn: ["^build"]`.
 - Ogni app Nuxt lo estende con `extends: ['@strangeverse/ui']` e ne eredita `app.vue`, `error.vue` (404), il layout `default`, `SiteHeader`, `SiteFooter`, `ThemeToggle`, `SiteLogo`, il CSS globale e la favicon.
 - Il tema è fatto di token CSS in `packages/ui/app/assets/css/main.css`. Il predefinito è lo scuro; con la classe `.light` su `<html>` si passa al chiaro, gestito da `@nuxtjs/color-mode`. I componenti usano solo le variabili (`--color-*`, `--space-*`, `--text-*`, `--radius-*`), mai colori scritti a mano.
 - Ogni app si configura nel proprio `app/app.config.ts`, con `site.nav` per il menu e `site.homeUrl` per l'indirizzo del portale (da impostare nelle sotto-app).
@@ -61,9 +62,9 @@ Si aggiunge una voce in `apps/portale/app/data/apps.ts`. Un'app `live` deve aver
 
 - **Lingua**: codice, nomi e messaggi di commit in inglese; issue, PR e documentazione in italiano.
 - **Branch**: `feat/…`, `fix/…`, `chore/…`, `docs/…` con una breve descrizione.
-- **Commit**: Conventional Commits, con lo scope del pacchetto quando serve (`feat(musica): add BPM control`).
+- **Commit**: Conventional Commits, con lo scope del pacchetto quando serve (`feat(soundverse): add BPM control`).
 - **PR**: una PR = una cosa. Si compila il template: cosa cambia, come provarlo, link all'anteprima, `Closes #<issue>`.
-- **Etichette**: `app:portale`, `app:musica`, `infra`, `bug`, `idea`.
+- **Etichette**: `app:portale`, `app:soundverse`, `infra`, `bug`, `idea`.
 - **Stile**: Prettier (senza punto e virgola, apici singoli, riga a 100 colonne), TypeScript `strict`.
 - Email dei commit: l'indirizzo noreply di GitHub (`…@users.noreply.github.com`), mai un'email personale o di lavoro.
 
@@ -104,7 +105,7 @@ Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-faile
   - `vercel inspect <url> --logs` mostra i log di build;
   - `vercel logs <url>` mostra i log di runtime;
   - `gh pr checks <n>` include lo stato di Vercel sulla PR.
-- Le anteprime sono protette da _Vercel Authentication_: per i test automatici serve il bypass (vedi `vercel curl`), oppure si testa la produzione.
+- La produzione è pubblica. Le anteprime sono protette da _Vercel Authentication_ (ADR 0007): per controllarle da CLI si usa `vercel curl <path> --deployment <url>`. I test Playwright si possono lanciare sulla produzione con `PLAYWRIGHT_BASE_URL`.
 
 ## Vincoli dei piani gratuiti
 
@@ -115,8 +116,8 @@ Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-faile
 
 ## Stato e note operative
 
-- Fasi 1–2 completate; ruleset `protezione-main` attivo. Fase 4 (portale e layer UI) in corso.
-- Fase 3 in corso: il progetto Vercel `strangeverse` è collegato al repo.
+- Fasi 1–4 completate: il portale è online su https://strangeverse-strange-verse.vercel.app, con il ruleset `protezione-main` attivo.
+- Fase 5 (DB e login) solo quando servirà. Prossimo passo: Fase 6, **Soundverse** (ADR 0006).
 - TypeScript è fermo alla 6.0 (ADR 0002). pnpm rifiuta le versioni pubblicate da meno di un giorno (ADR 0003).
 - pnpm blocca gli script di installazione dei pacchetti: quelli autorizzati sono in `allowBuilds` di `pnpm-workspace.yaml`. Oggi c'è solo `esbuild`.
 
