@@ -2,6 +2,7 @@ import { toPlain } from '~/utils/plain'
 import { defineStore } from 'pinia'
 import * as storage from '~/library/db'
 import { BANKS, defaultSequencer, newKit, type Bank, type Kit } from '~/pads/kit'
+import type { LevelParam, PadOverrides } from '~/pads/levels'
 import {
   addEvent,
   newPattern,
@@ -32,6 +33,13 @@ export const usePadsStore = defineStore('pads', {
     selected: 0,
     /** Se vera, ogni colpo ha velocity piena; altrimenti dipende da dove si tocca il pad. */
     fullVelocity: false,
+    /** Griglia normale o 16 Levels (un pad solo su 16 varianti). */
+    playMode: 'pads' as 'pads' | 'levels',
+    levelParam: 'tune' as LevelParam,
+    /** Pad sorgente del 16 Levels. */
+    levelSource: 0,
+    /** Ottava di partenza della tastiera a piano (4 = Do centrale). */
+    pianoOctave: 3,
     status: 'idle' as 'idle' | 'loading' | 'ready',
     /** Pattern in uso e, mentre suona, quello in coda per il prossimo giro. */
     patternIndex: 0,
@@ -138,13 +146,13 @@ export const usePadsStore = defineStore('pads', {
     },
 
     /** Registra un colpo alla posizione `beat`, quantizzata se la quantizzazione è attiva. */
-    recordHit(pad: number, beat: number, velocity: number) {
+    recordHit(pad: number, beat: number, velocity: number, overrides?: PadOverrides) {
       const pattern = this.pattern
       const length = patternBeats(pattern)
       const position = this.settings.quantize
         ? quantize(beat, this.settings.grid, length)
         : ((beat % length) + length) % length
-      addEvent(pattern, { pad, beat: position, velocity })
+      addEvent(pattern, { pad, beat: position, velocity, ...(overrides && { overrides }) })
     },
 
     undoRecording() {

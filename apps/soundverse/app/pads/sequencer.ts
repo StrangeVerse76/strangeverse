@@ -1,5 +1,6 @@
 import { MuteGroups, playPadHit } from './hit'
 import type { Pad } from './kit'
+import type { PadOverrides } from './levels'
 import {
   BEATS_PER_BAR,
   eventsBetween,
@@ -20,14 +21,20 @@ export interface SequencerSource {
   settings: () => SequencerSettings
   pads: () => Pad[]
   buffer: (clipId: string) => AudioBuffer | undefined
-  /** Pad tenuti premuti (o in latch) per il Note Repeat, con la loro velocity. */
-  repeating: () => ReadonlyMap<number, number>
+  /** Note tenute premute (o in latch) per il Note Repeat. */
+  repeating: () => ReadonlyMap<string, RepeatNote>
   noteRepeat: () => boolean
   metronome: () => boolean
   /** Chiamato quando il Note Repeat produce un colpo (per registrarlo). */
-  onRepeatHit?: (pad: number, beat: number, velocity: number) => void
+  onRepeatHit?: (note: RepeatNote, beat: number) => void
   /** Chiamato a ogni fine giro: può cambiare pattern (coda dal vivo). */
   onLoopEnd?: () => void
+}
+
+export interface RepeatNote {
+  pad: number
+  velocity: number
+  overrides?: PadOverrides
 }
 
 /**
@@ -118,7 +125,7 @@ export class PadSequencer {
 
     for (const event of eventsBetween(pattern, fromBeat, toBeat)) {
       const at = timeOf(event.absolute + swingDelay(event.beat, settings.grid, settings.swing))
-      this.hit(out, pads, event.pad, event.velocity, at)
+      this.hit(out, pads, event.pad, event.velocity, at, event.overrides)
     }
 
     if (this.source.noteRepeat()) {
@@ -126,9 +133,9 @@ export class PadSequencer {
       for (const beat of stepsBetween(step, fromBeat, toBeat)) {
         const inPattern = ((beat % length) + length) % length
         const at = timeOf(beat + swingDelay(inPattern, settings.grid, settings.swing))
-        for (const [pad, velocity] of this.source.repeating()) {
-          this.hit(out, pads, pad, velocity, at)
-          this.source.onRepeatHit?.(pad, inPattern, velocity)
+        for (const note of this.source.repeating().values()) {
+          this.hit(out, pads, note.pad, note.velocity, at, note.overrides)
+          this.source.onRepeatHit?.(note, inPattern)
         }
       }
     }
@@ -141,11 +148,19 @@ export class PadSequencer {
     }
   }
 
-  private hit(out: AudioNode, pads: Pad[], index: number, velocity: number, at: number) {
+  private hit(
+    out: AudioNode,
+    pads: Pad[],
+    index: number,
+    velocity: number,
+    at: number,
+    overrides?: PadOverrides,
+  ) {
     const pad = pads[index]
     const buffer = pad?.clipId ? this.source.buffer(pad.clipId) : undefined
     if (!pad || !buffer) return
-    this.mutes.add(pad.muteGroup, playPadHit(this.context, out, pad, buffer, velocity, at), at)
+    const played = { ...pad, ...overrides }
+    this.mutes.add(pad.muteGroup, playPadHit(this.context, out, played, buffer, velocity, at), at)
   }
 
   /** Il clic del metronomo: breve, più acuto sul primo battito della battuta. */

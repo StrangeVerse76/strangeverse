@@ -15,13 +15,22 @@ export function gridBeats(grid: Grid): number {
   return grid.endsWith('T') ? (base * 2) / 3 : base
 }
 
+import type { PadOverrides } from './levels'
+
 export interface PadEvent {
   /** Indice assoluto del pad (0..63). */
   pad: number
   /** Posizione nel pattern, in battiti (0 ≤ beat < battute × 4). */
   beat: number
   velocity: number
+  /** Varianti del colpo (16 Levels, tastiera a piano); facoltativo. */
+  overrides?: PadOverrides
 }
+
+const sameNote = (a: PadEvent, b: PadEvent) =>
+  a.pad === b.pad &&
+  Math.abs(a.beat - b.beat) < 1e-6 &&
+  JSON.stringify(a.overrides ?? {}) === JSON.stringify(b.overrides ?? {})
 
 export interface PadPattern {
   id: string
@@ -99,7 +108,9 @@ export function stepsBetween(step: number, from: number, to: number): number[] {
 /** Aggiunge un evento; se ce n'è già uno uguale (stesso pad, stesso istante) lo sostituisce. */
 export function addEvent(pattern: PadPattern, event: PadEvent) {
   pattern.events = [
-    ...pattern.events.filter((e) => !(e.pad === event.pad && Math.abs(e.beat - event.beat) < 1e-6)),
+    // Stesso pad, stesso istante e stesse varianti: è lo stesso colpo. Varianti diverse (un accordo
+    // sulla tastiera) convivono.
+    ...pattern.events.filter((e) => !sameNote(e, event)),
     event,
   ].sort((a, b) => a.beat - b.beat)
 }
