@@ -13,7 +13,7 @@ export function formatParam(value: number, unit: string, step = 0.01): string {
   if (unit === 's' && value < 1) return `${Math.round(value * 1000)} ms`
   if (unit === 's') return `${value.toFixed(2)} s`
   if (unit === 'dB') return `${value > 0 ? '+' : ''}${value.toFixed(1)} dB`
-  if (unit === 'ct') return `${value > 0 ? '+' : ''}${Math.round(value)} ct`
+  if (unit === 'ct' || unit === 'st') return `${value > 0 ? '+' : ''}${Math.round(value)} ${unit}`
   const decimals = step >= 1 ? 0 : 2
   return unit ? `${value.toFixed(decimals)}${unit}` : value.toFixed(decimals)
 }

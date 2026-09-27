@@ -51,7 +51,9 @@ export function buildEffect(
     case 'softclip': {
       const shaper = context.createWaveShaper()
       shaper.curve = softclipCurve(effect.drive)
-      shaper.oversample = '4x'
+      // Niente oversampling: in Chrome '4x' ritarda il segnale di 192 campioni (4 ms) e '2x' di 128.
+      // Una latenza che dipende dal browser sposterebbe i colpi fuori tempo.
+      shaper.oversample = 'none'
       return { input: shaper, output: shaper }
     }
 
