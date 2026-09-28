@@ -62,6 +62,27 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
+/** Passkey (plugin di Better Auth): accesso con Touch ID o Face ID, dopo un primo login GitHub. */
+export const passkey = pgTable(
+  'passkey',
+  {
+    id: text('id').primaryKey(),
+    name: text('name'),
+    publicKey: text('public_key').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    credentialID: text('credential_id').notNull(),
+    counter: integer('counter').notNull(),
+    deviceType: text('device_type').notNull(),
+    backedUp: boolean('backed_up').notNull(),
+    transports: text('transports'),
+    createdAt: timestamp('created_at'),
+    aaguid: text('aaguid'),
+  },
+  (t) => [index('passkey_user').on(t.userId), index('passkey_credential').on(t.credentialID)],
+)
+
 // --- Sincronizzazione di Soundverse (ADR 0011) ---
 
 /** Che cosa si sincronizza: i metadati dei clip (con la ricetta), i progetti e i kit dei pad. */

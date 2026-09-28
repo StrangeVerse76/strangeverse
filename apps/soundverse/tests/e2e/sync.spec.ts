@@ -22,7 +22,9 @@ function fakeServer() {
 
   async function install(context: BrowserContext) {
     await context.route('**/api/me', (route) =>
-      route.fulfill({ json: { enabled: true, user: { name: 'Pietro', image: null } } }),
+      route.fulfill({
+        json: { enabled: true, user: { name: 'Pietro', image: null, passkeys: 1 } },
+      }),
     )
     await context.route('**/api/sync/changes**', (route) => {
       const since = Number(new URL(route.request().url()).searchParams.get('since') ?? 0)
