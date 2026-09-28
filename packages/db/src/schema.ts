@@ -1,4 +1,14 @@
-import { boolean, index, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import {
+  bigserial,
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core'
 
 // --- Login (Better Auth): tabelle e colonne come le vuole il suo adattatore Drizzle ---
 
@@ -73,12 +83,20 @@ export const records = pgTable(
     data: jsonb('data').notNull(),
     /** Percorso su Blob dell'audio, solo per i clip importati e registrati. */
     audioPath: text('audio_path'),
+    /** Dimensione dell'audio su Blob, per sapere quanto spazio resta senza chiederlo a Blob. */
+    audioBytes: integer('audio_bytes'),
+    /**
+     * Numero di versione, crescente su tutta la tabella: ogni scrittura ne prende uno nuovo.
+     * Serve sia per chiedere "cosa è cambiato dopo N" sia per accorgersi dei conflitti.
+     */
+    seq: bigserial('seq', { mode: 'number' }).notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull(),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
   },
   (t) => [
     primaryKey({ columns: [t.ownerId, t.kind, t.id] }),
     index('records_owner_updated').on(t.ownerId, t.updatedAt),
+    index('records_owner_seq').on(t.ownerId, t.seq),
   ],
 )
 
