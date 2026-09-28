@@ -60,16 +60,17 @@ onBeforeUnmount(() => observer?.disconnect())
     <h1 class="visually-hidden">Soundverse</h1>
 
     <nav class="studio__nav" aria-label="Vai allo strumento">
-      <button
+      <!-- Link veri: portano allo strumento anche prima che il JavaScript sia pronto. -->
+      <a
         v-for="item in instruments"
         :key="item.id"
-        type="button"
+        :href="`#strumento-${item.id}`"
         class="nav-chip"
         :aria-current="active === item.id ? 'true' : undefined"
-        @click="goTo(item.id)"
+        @click.prevent="goTo(item.id)"
       >
         {{ item.title }}
-      </button>
+      </a>
     </nav>
 
     <div ref="rack" class="studio__rack" role="group" aria-label="Strumenti">
@@ -149,6 +150,7 @@ onBeforeUnmount(() => observer?.disconnect())
   color: var(--color-muted);
   font-size: var(--text-sm);
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
 }
 
