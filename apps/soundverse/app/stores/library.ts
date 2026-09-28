@@ -30,6 +30,11 @@ function recipeBpm(recipe: ClipRecipe): number | null {
   return null
 }
 
+const BLOCKED =
+  "Soundverse è aperto in un'altra scheda con una versione precedente: chiudila e la libreria si caricherà."
+const STALE =
+  "Soundverse è stato aggiornato in un'altra scheda: ricarica questa pagina per continuare a salvare."
+
 interface DeletedClip {
   clip: Clip
   audio: Blob
@@ -58,6 +63,11 @@ export const useLibraryStore = defineStore('library', {
     async load() {
       if (this.status === 'loading' || this.status === 'ready') return
       this.status = 'loading'
+      storage.onDbNotice((notice) => {
+        if (notice === 'blocked') this.error = BLOCKED
+        else if (notice === 'stale') this.error = STALE
+        else if (this.error === BLOCKED) this.error = null
+      })
       try {
         this.clips = await storage.listClips()
         this.status = 'ready'
