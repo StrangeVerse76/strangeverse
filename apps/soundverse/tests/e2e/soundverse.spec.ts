@@ -93,3 +93,12 @@ test.describe('senza JavaScript', () => {
     await expect(page.getByRole('region', { name: 'MIDI', exact: true })).toBeInViewport()
   })
 })
+
+test('un clic prima del JavaScript evidenzia lo strumento quando l’app è pronta', async ({
+  page,
+}) => {
+  await page.goto('/#strumento-midi')
+  const nav = page.getByRole('navigation', { name: 'Vai allo strumento' })
+  await expect(nav.getByRole('link', { name: 'MIDI' })).toHaveAttribute('aria-current', 'true')
+  await expect(page.getByRole('region', { name: 'MIDI', exact: true })).toBeInViewport()
+})
