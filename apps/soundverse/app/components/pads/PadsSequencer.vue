@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { toPlain } from '~/utils/plain'
-import { foldTail } from '~/drums/pattern'
-import { SAMPLE_RATE } from '~/audio/constants'
-import { renderOffline } from '~/audio/render'
+import { renderRecipe } from '~/library/recipes'
 import { padName } from '~/pads/kit'
 import { GRIDS, patternBeats, type PadEvent } from '~/pads/pattern'
-import { padPatternVoice, patternSeconds } from '~/pads/render'
 import { usePadSequencer } from '~/pads/useSequencer'
 import type { ParamDef } from '~/synth/spec'
 import { useLibraryStore } from '~/stores/library'
@@ -52,20 +49,18 @@ function addPattern() {
 async function save() {
   saving.value = true
   try {
-    await seq.preload()
-    const pattern = toPlain(pads.pattern)
-    const settings = toPlain(pads.settings)
-    const kitPads = toPlain(pads.kit.pads)
-    const rendered = await renderOffline(
-      padPatternVoice(pattern, settings, kitPads, seq.buffers, toPlain(pads.mixer)),
-    )
-    const frames = Math.round(patternSeconds(pattern, settings) * SAMPLE_RATE)
-    const channels = [0, 1].map((c) => foldTail(rendered.getChannelData(c), frames))
+    const recipe = {
+      type: 'padPattern',
+      pattern: toPlain(pads.pattern),
+      settings: toPlain(pads.settings),
+      pads: toPlain(pads.kit.pads),
+      mixer: toPlain(pads.mixer),
+    } as const
     await library.add({
       name: name.value,
       kind: 'drums',
-      channels,
-      recipe: { type: 'padPattern', pattern, settings, pads: kitPads, mixer: toPlain(pads.mixer) },
+      channels: await renderRecipe(recipe, library.sourceBuffer),
+      recipe,
     })
   } finally {
     saving.value = false
