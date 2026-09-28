@@ -112,6 +112,8 @@ test('senza Web MIDI il pannello lo dice', async ({ page }) => {
     delete (Navigator.prototype as { requestMIDIAccess?: unknown }).requestMIDIAccess
   })
   await page.goto('/')
+  // Come negli altri test: un clic prima che l'app sia pronta andrebbe perso.
+  await expect(page.getByText('La libreria è vuota')).toBeVisible()
   await midi(page).scrollIntoViewIfNeeded()
   await midi(page).getByRole('button', { name: 'Collega MIDI' }).click()
   await expect(midi(page).getByText('non supporta il MIDI')).toBeVisible()
