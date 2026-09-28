@@ -19,7 +19,12 @@ export type ClipRecipe =
   | { type: 'synth'; spec: SynthSpec }
   | { type: 'drums'; pattern: DrumPattern }
   | { type: 'sample'; sourceId: string; sourceName: string; ops: SampleOp[] }
-  | { type: 'mix'; project: TimelineProject }
+  | {
+      type: 'mix'
+      project: TimelineProject
+      /** Uno stem: reso senza limitatore. Facoltativo (i clip più vecchi non l'hanno). */
+      stem?: boolean
+    }
   | { type: 'chords'; spec: ProgressionSpec }
   | {
       type: 'padPattern'
