@@ -61,39 +61,44 @@ async function signOut() {
 </script>
 
 <template>
-  <div v-if="me?.enabled" class="account">
-    <p v-if="denied && !me.user" class="account__error" role="alert">Accesso non consentito</p>
-    <template v-if="me.user">
-      <img v-if="me.user.image" :src="me.user.image" alt="" class="account__avatar" />
-      <span class="account__name">{{ me.user.name }}</span>
-      <SyncStatus />
-      <button
-        v-if="passkeys && me.user.passkeys === 0"
-        type="button"
-        class="account__button"
-        :disabled="busy"
-        @click="addPasskey"
-      >
-        Aggiungi passkey
-      </button>
-      <button type="button" class="account__button" :disabled="busy" @click="signOut">Esci</button>
-    </template>
-    <template v-else>
-      <button
-        v-if="passkeys"
-        type="button"
-        class="account__button"
-        :disabled="busy"
-        @click="signInWithPasskey"
-      >
-        Accedi con passkey
-      </button>
-      <button type="button" class="account__button" :disabled="busy" @click="signIn">
-        Accedi con GitHub
-      </button>
-    </template>
-    <p v-if="message" class="account__message" role="status">{{ message }}</p>
-  </div>
+  <!-- Solo nel browser: chi è entrato lo si sa dopo /api/me, e il server rende sempre "nessuno". -->
+  <ClientOnly>
+    <div v-if="me?.enabled" class="account">
+      <p v-if="denied && !me.user" class="account__error" role="alert">Accesso non consentito</p>
+      <template v-if="me.user">
+        <img v-if="me.user.image" :src="me.user.image" alt="" class="account__avatar" />
+        <span class="account__name">{{ me.user.name }}</span>
+        <SyncStatus />
+        <button
+          v-if="passkeys && me.user.passkeys === 0"
+          type="button"
+          class="account__button"
+          :disabled="busy"
+          @click="addPasskey"
+        >
+          Aggiungi passkey
+        </button>
+        <button type="button" class="account__button" :disabled="busy" @click="signOut">
+          Esci
+        </button>
+      </template>
+      <template v-else>
+        <button
+          v-if="passkeys"
+          type="button"
+          class="account__button"
+          :disabled="busy"
+          @click="signInWithPasskey"
+        >
+          Accedi con passkey
+        </button>
+        <button type="button" class="account__button" :disabled="busy" @click="signIn">
+          Accedi con GitHub
+        </button>
+      </template>
+      <p v-if="message" class="account__message" role="status">{{ message }}</p>
+    </div>
+  </ClientOnly>
 </template>
 
 <style scoped>

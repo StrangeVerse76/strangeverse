@@ -42,3 +42,14 @@ test('con una passkey già registrata non si propone di aggiungerne un’altra',
   await expect(header(page).getByRole('button', { name: 'Esci' })).toBeVisible()
   await expect(header(page).getByRole('button', { name: 'Aggiungi passkey' })).toHaveCount(0)
 })
+
+test('con la sessione la pagina si idrata senza differenze', async ({ page }) => {
+  const mismatches: string[] = []
+  page.on('console', (m) => {
+    if (/hydration/i.test(m.text())) mismatches.push(m.text())
+  })
+  await me(page, { enabled: true, user: { name: 'Pietro', image: null, passkeys: 1 } })
+  await page.goto('/')
+  await expect(header(page).getByRole('button', { name: 'Esci' })).toBeVisible()
+  expect(mismatches).toEqual([])
+})
