@@ -18,6 +18,7 @@
   "dependencies": {
     "@breezystack/lamejs": "1.2.7",
     "@pinia/nuxt": "1.0.2",
+    "@strangeverse/db": "workspace:*",
     "@strangeverse/ui": "workspace:*",
     "idb": "8.0.3",
     "nuxt": "4.5.2",
