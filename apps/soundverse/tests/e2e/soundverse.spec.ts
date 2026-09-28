@@ -63,7 +63,7 @@ test('ogni elemento dell’header sta dentro lo schermo', async ({ page }) => {
 test('la barra degli strumenti porta a ognuno, anche a quelli fuori schermo', async ({ page }) => {
   await page.goto('/')
   const nav = page.getByRole('navigation', { name: 'Vai allo strumento' })
-  await expect(nav.getByRole('button')).toHaveText([
+  await expect(nav.getByRole('link')).toHaveText([
     'Synth',
     'Batteria',
     'Campioni',
@@ -74,11 +74,22 @@ test('la barra degli strumenti porta a ognuno, anche a quelli fuori schermo', as
     'Mixer',
     'MIDI',
   ])
-  await nav.getByRole('button', { name: 'MIDI' }).click()
+  await nav.getByRole('link', { name: 'MIDI' }).click()
   const midi = page.getByRole('region', { name: 'MIDI', exact: true })
   await expect(midi).toBeInViewport()
-  await expect(nav.getByRole('button', { name: 'MIDI' })).toHaveAttribute('aria-current', 'true')
+  await expect(nav.getByRole('link', { name: 'MIDI' })).toHaveAttribute('aria-current', 'true')
 
-  await nav.getByRole('button', { name: 'Synth' }).click()
+  await nav.getByRole('link', { name: 'Synth' }).click()
   await expect(page.getByRole('region', { name: 'Synth', exact: true })).toBeInViewport()
+})
+
+test.describe('senza JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test('la barra porta comunque allo strumento', async ({ page }) => {
+    await page.goto('/')
+    const nav = page.getByRole('navigation', { name: 'Vai allo strumento' })
+    await nav.getByRole('link', { name: 'MIDI' }).click()
+    await expect(page.getByRole('region', { name: 'MIDI', exact: true })).toBeInViewport()
+  })
 })
