@@ -2,7 +2,12 @@
 
 [![CI](https://github.com/StrangeVerse76/strangeverse/actions/workflows/ci.yml/badge.svg)](https://github.com/StrangeVerse76/strangeverse/actions/workflows/ci.yml)
 
-Sito personale che fa da hub per una serie di sotto-applicativi indipendenti. Il primo è un'app web per fare musica.
+Sito personale che fa da hub per una serie di sotto-applicativi indipendenti.
+
+| App        | Cosa fa                                                                                 | Indirizzo                                     |
+| ---------- | --------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Portale    | Home, catalogo delle app, chi sono                                                      | https://strangeverse-strange-verse.vercel.app |
+| Soundverse | Studio audio nel browser: synth, batteria, campioni, pad in stile MPC, timeline, export | https://soundverse-strange-verse.vercel.app   |
 
 ## Avvio rapido
 
