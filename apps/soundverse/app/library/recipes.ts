@@ -18,7 +18,7 @@ export type BufferSource = (id: string) => Promise<AudioBuffer | undefined>
 export const isRenderable = (recipe: ClipRecipe) =>
   recipe.type !== 'import' && recipe.type !== 'recording'
 
-/** Gli id dei clip di cui una ricetta ha bisogno, da rifare prima di lei. */
+/** Gli id dei clip di cui una ricetta ha bisogno: su un altro dispositivo vanno rifatti prima di lei. */
 export function recipeSources(recipe: ClipRecipe): string[] {
   switch (recipe.type) {
     case 'sample':
