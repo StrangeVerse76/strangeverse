@@ -15,6 +15,13 @@
       "when": 1790579176156,
       "tag": "0001_versioni",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790588253930,
+      "tag": "0002_passkey",
+      "breakpoints": true
     }
   ]
 }

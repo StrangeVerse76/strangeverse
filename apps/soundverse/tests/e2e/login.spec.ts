@@ -16,11 +16,12 @@ test('senza sessione c’è "Accedi con GitHub"; un rifiuto si vede', async ({ p
   await me(page, { enabled: true, user: null })
   await page.goto('/?error=login')
   await expect(header(page).getByRole('button', { name: 'Accedi con GitHub' })).toBeVisible()
+  await expect(header(page).getByRole('button', { name: 'Accedi con passkey' })).toBeVisible()
   await expect(header(page).getByRole('alert')).toHaveText('Accesso non consentito')
 })
 
 test('con la sessione si vede chi è entrato e si può uscire', async ({ page }) => {
-  await me(page, { enabled: true, user: { name: 'Pietro', image: null } })
+  await me(page, { enabled: true, user: { name: 'Pietro', image: null, passkeys: 0 } })
   let signedOut = false
   await page.route('**/api/auth/sign-out', async (route) => {
     signedOut = true
@@ -29,7 +30,15 @@ test('con la sessione si vede chi è entrato e si può uscire', async ({ page })
   })
   await page.goto('/')
   await expect(header(page)).toContainText('Pietro')
+  await expect(header(page).getByRole('button', { name: 'Aggiungi passkey' })).toBeVisible()
   await header(page).getByRole('button', { name: 'Esci' }).click()
   await expect(header(page).getByRole('button', { name: 'Accedi con GitHub' })).toBeVisible()
   expect(signedOut).toBe(true)
+})
+
+test('con una passkey già registrata non si propone di aggiungerne un’altra', async ({ page }) => {
+  await me(page, { enabled: true, user: { name: 'Pietro', image: null, passkeys: 1 } })
+  await page.goto('/')
+  await expect(header(page).getByRole('button', { name: 'Esci' })).toBeVisible()
+  await expect(header(page).getByRole('button', { name: 'Aggiungi passkey' })).toHaveCount(0)
 })

@@ -17,7 +17,7 @@ describe('schema', () => {
   })
 
   it('le migrazioni creano ogni tabella dello schema', () => {
-    for (const table of ['user', 'session', 'account', 'verification', 'records']) {
+    for (const table of ['user', 'session', 'account', 'verification', 'passkey', 'records']) {
       expect(sql).toContain(`CREATE TABLE "${table}"`)
     }
   })

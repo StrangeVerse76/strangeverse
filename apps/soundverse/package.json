@@ -16,6 +16,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@better-auth/passkey": "1.7.6",
     "@breezystack/lamejs": "1.2.7",
     "@pinia/nuxt": "1.0.2",
     "@strangeverse/db": "workspace:*",

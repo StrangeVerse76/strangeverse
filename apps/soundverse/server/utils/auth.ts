@@ -1,4 +1,5 @@
 import * as schema from '@strangeverse/db/schema'
+import { passkey } from '@better-auth/passkey'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import type { GithubProfile } from 'better-auth/social-providers'
@@ -47,8 +48,9 @@ function createAuth() {
   const db = useDb()
   const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, BETTER_AUTH_SECRET } = process.env
   if (!db || !GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET || !BETTER_AUTH_SECRET) return null
+  const baseURL = process.env.VERCEL_ENV === 'production' ? PRODUCTION_URL : 'http://localhost:3000'
   return betterAuth({
-    baseURL: process.env.VERCEL_ENV === 'production' ? PRODUCTION_URL : 'http://localhost:3000',
+    baseURL,
     secret: BETTER_AUTH_SECRET,
     // neon-http non ha transazioni.
     database: drizzleAdapter(db, { provider: 'pg', schema, transaction: false }),
@@ -59,6 +61,8 @@ function createAuth() {
         getUserInfo: (tokens) => ownerProfile(tokens.accessToken),
       },
     },
+    // Passkey: si aggiunge da loggati (dopo GitHub) e poi basta Touch ID. Il dominio è quello del sito.
+    plugins: [passkey({ rpID: new URL(baseURL).hostname, rpName: 'Soundverse', origin: baseURL })],
     telemetry: { enabled: false },
   })
 }
