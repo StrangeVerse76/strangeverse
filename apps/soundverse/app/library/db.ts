@@ -76,8 +76,36 @@ function notifyChange() {
 
 let database: Promise<IDBPDatabase<SoundverseDB>> | null = null
 
+/**
+ * Avvisi sul database da mostrare all'utente:
+ * - `blocked`: un'altra scheda tiene aperta una versione vecchia e l'aggiornamento aspetta;
+ * - `ready`: l'attesa è finita;
+ * - `stale`: un'altra scheda ha aggiornato il database, questa va ricaricata.
+ */
+export type DbNotice = 'blocked' | 'ready' | 'stale'
+const listeners = new Set<(notice: DbNotice) => void>()
+
+export function onDbNotice(listener: (notice: DbNotice) => void) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+const notify = (notice: DbNotice) => listeners.forEach((l) => l(notice))
+
 function db() {
-  database ??= openDB<SoundverseDB>('soundverse', 4, {
+  if (database) return database
+  let wasBlocked = false
+  database = openDB<SoundverseDB>('soundverse', 4, {
+    blocked() {
+      wasBlocked = true
+      notify('blocked')
+    },
+    // Un'altra scheda vuole una versione più nuova: questa si fa da parte invece di bloccarla.
+    blocking() {
+      void database?.then((d) => d.close())
+      database = null
+      notify('stale')
+    },
     // Ogni versione aggiunge i suoi store: chi ha già il database li riceve senza perdere niente.
     async upgrade(upgrade, oldVersion, _newVersion, tx) {
       if (oldVersion < 1) {
@@ -99,6 +127,10 @@ function db() {
       }
     },
   })
+  void database.then(
+    () => wasBlocked && notify('ready'),
+    () => undefined,
+  )
   return database
 }
 
