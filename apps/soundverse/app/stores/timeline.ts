@@ -1,6 +1,7 @@
 import { toPlain } from '~/utils/plain'
 import { defineStore } from 'pinia'
 import * as storage from '~/library/db'
+import { isPristine } from '~/sync/pristine'
 import type { StoredProject } from '~/library/db'
 import {
   defaultProject,
@@ -131,6 +132,36 @@ export const useTimelineStore = defineStore('timeline', {
         }
       }
       await this.newProject()
+    },
+
+    /**
+     * Dopo una sincronizzazione: rilegge l'elenco e, se il progetto aperto è cambiato altrove e
+     * qui non ci sono modifiche in attesa, mostra la nuova versione.
+     */
+    async refresh(changed: ReadonlySet<string>) {
+      if (this.status !== 'ready') return
+      const stored = await storage.listProjects()
+      this.projects = stored.map(({ id, name, updatedAt }) => ({ id, name, updatedAt }))
+      // Il progetto vuoto creato al primo avvio non serve più se ne sono arrivati altri.
+      const own = stored.find((p) => p.id === this.projectId)
+      const entry = await storage.getEntry('project', this.projectId)
+      if (
+        own &&
+        // Solo se ne sono appena arrivati dal server: un progetto vuoto creato qui a mano resta.
+        stored.some((p) => p.id !== this.projectId && changed.has(p.id)) &&
+        entry?.seq == null &&
+        !pending &&
+        isPristine('project', own)
+      ) {
+        await this.deleteCurrent()
+        return
+      }
+      if (!changed.has(this.projectId) || pending) return
+      const open = stored.find((p) => p.id === this.projectId)
+      const latest = [...stored].sort((a, b) => b.updatedAt - a.updatedAt)[0]
+      if (open) this.show(open)
+      else if (latest) this.show(latest)
+      else await this.newProject()
     },
 
     show(stored: StoredProject) {

@@ -23,3 +23,16 @@ export function formatDb(level: number): string {
   if (!(level > 0)) return '-∞ dBFS'
   return `${(20 * Math.log10(level)).toFixed(1)} dBFS`
 }
+
+/** Byte in unità leggibili, in italiano: "12,4 MB", "1 GB". */
+export function formatBytes(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB']
+  let value = bytes
+  let unit = 0
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024
+    unit++
+  }
+  const digits = unit === 0 || value >= 100 || Number.isInteger(value) ? 0 : 1
+  return `${value.toFixed(digits).replace('.', ',')} ${units[unit]}`
+}

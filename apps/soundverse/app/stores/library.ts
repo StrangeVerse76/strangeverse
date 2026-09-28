@@ -195,6 +195,16 @@ export const useLibraryStore = defineStore('library', {
       return renderRecipe(clip.recipe, this.sourceBuffer)
     },
 
+    /** Rilegge i clip dopo una sincronizzazione; i buffer dei clip cambiati si ridecodificano. */
+    async refresh(changed: ReadonlySet<string>) {
+      if (this.status !== 'ready') return
+      for (const id of changed) buffers.delete(id)
+      this.clips = await storage.listClips()
+      if (this.selectedId && !this.clips.some((c) => c.id === this.selectedId)) {
+        this.selectedId = null
+      }
+    },
+
     /** Come `getBuffer`, ma `undefined` se il clip non è (più) in libreria. Per `renderRecipe`. */
     async sourceBuffer(id: string): Promise<AudioBuffer | undefined> {
       return this.clips.some((c) => c.id === id) ? this.getBuffer(id) : undefined

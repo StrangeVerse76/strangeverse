@@ -46,6 +46,8 @@ describe.skipIf(!url)('sincronizzazione sul database', () => {
     const base = current?.seq ?? 0
     const renamed = await pushOne(db, ownerId, clip({ base, data: { name: 'Nuovo' } }), null)
     expect(renamed.status).toBe('ok')
+    // Una rinomina senza audio non tocca l'audio già caricato.
+    expect(await clipAudioPath(db, ownerId, 'c1')).toBe('development/audio/c1.wav')
     if (renamed.status !== 'ok') return
     expect(renamed.seq).toBeGreaterThan(base)
 
