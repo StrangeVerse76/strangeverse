@@ -33,19 +33,41 @@ function goTo(id: string) {
   panel?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
   panel?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
   active.value = id
+  pinned = id
 }
 
-// Lo strumento "attivo" nella barra è quello più visibile nel rack.
+// Lo strumento "attivo" nella barra: quello scelto finché resta ben visibile, altrimenti il più
+// visibile nel rack. Su schermi larghi se ne vedono tanti per intero, e senza questa preferenza
+// la barra salterebbe su un altro.
+const ratios = new Map<string, number>()
+/** Lo strumento verso cui si sta scorrendo: resta attivo finché non si vede. */
+let pinned: string | null = null // non reattivo: serve solo all'observer
+
 onMounted(() => {
+  // Un clic arrivato prima del JavaScript ha lasciato l'ancora nell'indirizzo.
+  const fromHash = location.hash.replace('#strumento-', '')
+  if (instruments.some((i) => i.id === fromHash)) {
+    active.value = fromHash
+    pinned = fromHash
+  }
   if (!rack.value) return
   observer = new IntersectionObserver(
     (entries) => {
-      const visible = entries
-        .filter((e) => e.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-      if (visible) active.value = visible.target.id.replace('strumento-', '')
+      for (const e of entries) {
+        ratios.set(
+          e.target.id.replace('strumento-', ''),
+          e.isIntersecting ? e.intersectionRatio : 0,
+        )
+      }
+      if (pinned) {
+        if ((ratios.get(pinned) ?? 0) >= 0.5) pinned = null
+        return
+      }
+      if ((ratios.get(active.value) ?? 0) >= 0.5) return
+      const [best] = [...ratios].sort((a, b) => b[1] - a[1])
+      if (best && best[1] > 0) active.value = best[0]
     },
-    { root: rack.value, threshold: [0.5, 0.75, 1] },
+    { root: rack.value, threshold: [0, 0.5, 0.75, 1] },
   )
   for (const item of instruments) {
     const el = document.getElementById(`strumento-${item.id}`)
@@ -73,7 +95,14 @@ onBeforeUnmount(() => observer?.disconnect())
       </a>
     </nav>
 
-    <div ref="rack" class="studio__rack" role="group" aria-label="Strumenti">
+    <div
+      ref="rack"
+      class="studio__rack"
+      role="group"
+      aria-label="Strumenti"
+      @wheel.passive="pinned = null"
+      @touchstart.passive="pinned = null"
+    >
       <StudioPanel id="strumento-synth" title="Synth">
         <SynthPanel />
       </StudioPanel>
