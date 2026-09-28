@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { authClient, type Me } from '~/auth/client'
+import { authClient } from '~/auth/client'
+import { useMe } from '~/auth/me'
 
-// Solo nel browser: la pagina resta statica e la libreria funziona anche senza login.
-const { data: me, refresh } = useFetch<Me>('/api/me', { server: false })
+// Chi è entrato lo chiede il plugin della sincronizzazione, solo nel browser: la pagina resta
+// statica e la libreria funziona anche senza login.
+const { me, refresh } = useMe()
 const route = useRoute()
 const denied = computed(() => route.query.error !== undefined)
 const busy = ref(false)
@@ -33,6 +35,7 @@ async function signOut() {
     <template v-if="me.user">
       <img v-if="me.user.image" :src="me.user.image" alt="" class="account__avatar" />
       <span class="account__name">{{ me.user.name }}</span>
+      <SyncStatus />
       <button type="button" class="account__button" :disabled="busy" @click="signOut">Esci</button>
     </template>
     <button v-else type="button" class="account__button" :disabled="busy" @click="signIn">

@@ -100,8 +100,10 @@ test('ogni clip si rifà identico dalla sua ricetta', async ({ page }) => {
   for (const c of checks) {
     expect(c.channels[1], c.name).toBe(c.channels[0])
     expect(c.frames[1], c.name).toBe(c.frames[0])
-    // L'audio salvato è a 24 bit, e il browser lo rilegge dividendo per 2^23 invece che per
-    // 2^23 − 1: la differenza sta entro mezzo gradino di arrotondamento più uno di scala.
-    expect(c.maxDiff, c.name).toBeLessThanOrEqual(1.5 / 2 ** 23)
+    // L'audio salvato è a 24 bit: rileggerlo sbaglia di mezzo gradino di arrotondamento più uno
+    // di scala (2^23 contro 2^23 − 1), e i browser non arrotondano tutti allo stesso modo (su
+    // Chromium Linux si arriva a 1,75). 4 gradini sono circa −132 dB: una ricetta rifatta male
+    // darebbe differenze migliaia di volte più grandi.
+    expect(c.maxDiff, c.name).toBeLessThanOrEqual(4 / 2 ** 23)
   }
 })

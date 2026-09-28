@@ -1,6 +1,7 @@
 import { toPlain } from '~/utils/plain'
 import { defineStore } from 'pinia'
 import * as storage from '~/library/db'
+import { isPristine } from '~/sync/pristine'
 import { BANKS, defaultSequencer, newKit, type Bank, type Kit } from '~/pads/kit'
 import type { LevelParam, PadOverrides } from '~/pads/levels'
 import { defaultPadMixer, type PadMixer } from '~/pads/bus'
@@ -105,6 +106,29 @@ export const usePadsStore = defineStore('pads', {
       this.selected = 0
       this.bank = BANKS[0]
       await this.save()
+    },
+
+    /** Dopo una sincronizzazione, come `timeline.refresh`. */
+    async refresh(changed: ReadonlySet<string>) {
+      if (this.status !== 'ready') return
+      const kits = await storage.listKits()
+      this.kits = kits.map(({ id, name, updatedAt }) => ({ id, name, updatedAt }))
+      // Come per i progetti: il kit vuoto del primo avvio lascia il posto a quelli arrivati.
+      const own = kits.find((k) => k.id === this.kit.id)
+      const entry = await storage.getEntry('kit', this.kit.id)
+      const others = kits.filter((k) => k.id !== this.kit.id)
+      const latest = [...others].sort((a, b) => b.updatedAt - a.updatedAt)[0]
+      const arrived = others.some((k) => changed.has(k.id))
+      if (own && latest && arrived && entry?.seq == null && !pending && isPristine('kit', own)) {
+        await storage.deleteKit(own.id)
+        this.kits = this.kits.filter((k) => k.id !== own.id)
+        this.kit = withSequencer(latest)
+        return
+      }
+      if (!changed.has(this.kit.id) || pending) return
+      if (own) this.kit = withSequencer(own)
+      else if (latest) this.kit = withSequencer(latest)
+      else await this.newKit()
     },
 
     async open(id: string) {

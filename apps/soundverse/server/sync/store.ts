@@ -44,10 +44,13 @@ export async function pushOne(
   const now = new Date()
   const values = {
     data: item.data,
-    audioPath: item.deleted ? null : path,
-    audioBytes: item.deleted ? null : item.audioBytes,
     updatedAt: now,
     deletedAt: item.deleted ? now : null,
+    // Senza audio nella richiesta (per esempio una rinomina) resta quello che c'era;
+    // un'eliminazione lo toglie.
+    ...(item.deleted
+      ? { audioPath: null, audioBytes: null }
+      : path !== null && { audioPath: path, audioBytes: item.audioBytes }),
   }
   const written =
     item.base === null
