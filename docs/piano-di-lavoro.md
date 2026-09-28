@@ -4,6 +4,8 @@
 > Destinatari: Pietro (owner) e Claude Code (sviluppo operativo).
 > Uso: personale, non commerciale — tutto su piani gratuiti.
 
+> **Stato (2026-09-28): completato.** Fasi 0–6 fatte: portale e Soundverse online, CI, anteprime, database, login con GitHub e passkey, sincronizzazione fra dispositivi. Aperta solo la [#71](https://github.com/StrangeVerse76/strangeverse/issues/71) (accesso per altre persone, in sospeso). Lo stato operativo aggiornato è in `CLAUDE.md`.
+
 ---
 
 ## 1. Obiettivo
@@ -151,72 +153,72 @@ Ogni fase si chiude con una PR (o poche) e un criterio di completamento verifica
 
 Procedura completa, passo passo, nell'**Appendice A**. In sintesi:
 
-- [ ] Computer: Git configurato, Node.js LTS, pnpm, VS Code (A.1)
-- [ ] Account GitHub personale con 2FA e GitHub CLI autenticata anche per Git (A.2)
-- [ ] Account Vercel **Hobby** creato con GitHub, Vercel CLI autenticata (A.3)
-- [ ] Claude Code installato, con accesso tramite piano personale o chiave API (A.4)
-- [ ] Decisioni D1 (nome) e D2 (pubblico/privato) prese (§9)
-- [ ] (Opz.) Dominio personale acquistato (A.8)
+- [x] Computer: Git configurato, Node.js LTS, pnpm, VS Code (A.1)
+- [x] Account GitHub personale con 2FA e GitHub CLI autenticata anche per Git (A.2)
+- [x] Account Vercel **Hobby** creato con GitHub, Vercel CLI autenticata (A.3)
+- [x] Claude Code installato, con accesso tramite piano personale o chiave API (A.4)
+- [x] Decisioni D1 (nome) e D2 (pubblico/privato) prese (§9)
+- [ ] (Opz.) Dominio personale acquistato (A.8) — _non fatto: per ora bastano gli indirizzi `vercel.app`_
 
 **Fatto quando**: la verifica finale di A.9 passa tutta.
 
 ### Fase 1 — Fondamenta del repository _(Claude Code)_
 
-- [ ] Creare il repo con `gh repo create`
-- [ ] Scheletro monorepo: pnpm workspaces, Turborepo, `packages/config`
-- [ ] TypeScript strict, ESLint, Prettier condivisi
-- [ ] `CLAUDE.md` iniziale (vedi §8)
-- [ ] `.claude/settings.json` con i permessi del progetto (Appendice A.5), versionato nel repo
-- [ ] `docs/piano-di-lavoro.md` (questo file) e `docs/decisioni/`
-- [ ] Template di PR e di issue, etichette
-- [ ] Dependabot
-- [ ] `README.md` con avvio rapido
+- [x] Creare il repo con `gh repo create`
+- [x] Scheletro monorepo: pnpm workspaces, Turborepo, `packages/config`
+- [x] TypeScript strict, ESLint, Prettier condivisi
+- [x] `CLAUDE.md` iniziale (vedi §8)
+- [x] `.claude/settings.json` con i permessi del progetto (Appendice A.5), versionato nel repo
+- [x] `docs/piano-di-lavoro.md` (questo file) e `docs/decisioni/`
+- [x] Template di PR e di issue, etichette
+- [x] Dependabot
+- [x] `README.md` con avvio rapido
 
 **Fatto quando**: `pnpm install && pnpm lint && pnpm typecheck` passano su un clone pulito.
 
 ### Fase 2 — CI _(Claude Code)_
 
-- [ ] Workflow `ci.yml`: install con cache pnpm, lint, typecheck, test
-- [ ] Turborepo esegue solo i task dei pacchetti modificati
-- [ ] Badge di stato nel README
-- [ ] _(Pietro)_ Protezione di `main` con un ruleset (Appendice A.6): si fa **dopo** il primo giro della CI, perché il controllo obbligatorio va scelto per nome
+- [x] Workflow `ci.yml`: install con cache pnpm, lint, typecheck, test
+- [x] Turborepo esegue solo i task dei pacchetti modificati
+- [x] Badge di stato nel README
+- [x] _(Pietro)_ Protezione di `main` con un ruleset (Appendice A.6): si fa **dopo** il primo giro della CI, perché il controllo obbligatorio va scelto per nome
 
 **Fatto quando**: una PR di prova mostra i controlli verdi e una PR volutamente rotta viene bloccata.
 
 ### Fase 3 — Collegamento a Vercel _(Claude Code + Pietro)_
 
-- [ ] Creare `apps/portale` (Nuxt minimale, "Hello")
-- [ ] _(Pietro)_ Importare il repo su Vercel e dare accesso alla GitHub App di Vercel (Appendice A.7), progetto `portale` con Root Directory `apps/portale`
-- [ ] Collegare la cartella locale al progetto: `vercel link` in `apps/portale`, poi `vercel env pull .env.local` (la cartella `.vercel/` e i file `.env*` restano fuori da Git)
-- [ ] Verificare anteprima su PR e produzione su merge
-- [ ] Configurare "ignored build step" / Turborepo per evitare build inutili
-- [ ] Documentare in `CLAUDE.md` come leggere i log dei deploy
+- [x] Creare `apps/portale` (Nuxt minimale, "Hello")
+- [x] _(Pietro)_ Importare il repo su Vercel e dare accesso alla GitHub App di Vercel (Appendice A.7), progetto `portale` con Root Directory `apps/portale`
+- [x] Collegare la cartella locale al progetto: `vercel link` in `apps/portale`, poi `vercel env pull .env.local` (la cartella `.vercel/` e i file `.env*` restano fuori da Git)
+- [x] Verificare anteprima su PR e produzione su merge
+- [x] Configurare "ignored build step" / Turborepo per evitare build inutili
+- [x] Documentare in `CLAUDE.md` come leggere i log dei deploy
 
 **Fatto quando**: una PR genera un URL di anteprima funzionante e il merge aggiorna la produzione.
 
 ### Fase 4 — Portale e layer condiviso _(Claude Code)_
 
-- [ ] `packages/ui` come Nuxt Layer: palette, tipografia, tema chiaro/scuro, layout, header
-- [ ] Home del portale con catalogo app letto dal manifest
-- [ ] Pagina "chi sono" / about (contenuti di Pietro)
-- [ ] SEO di base, favicon, pagina 404
-- [ ] Primi test Playwright sull'anteprima
+- [x] `packages/ui` come Nuxt Layer: palette, tipografia, tema chiaro/scuro, layout, header
+- [x] Home del portale con catalogo app letto dal manifest
+- [x] Pagina "chi sono" / about (contenuti di Pietro)
+- [x] SEO di base, favicon, pagina 404
+- [x] Primi test Playwright sull'anteprima
 
 **Fatto quando**: il portale è online con il catalogo (anche solo con "Musica — in arrivo").
 
 ### Fase 5 — Database e autenticazione _(quando serve, Claude Code)_
 
-- [ ] _(Pietro)_ Integrazione **Neon** dal Marketplace di Vercel, con branch del DB per le anteprime (Appendice A.7.3)
-- [ ] `packages/db`: client Drizzle, schema, script di migrazione
-- [ ] Migrazioni applicate in modo controllato (mai automatiche sul DB di produzione senza revisione)
-- [ ] **Better Auth** con login GitHub; accesso ristretto all'account di Pietro (o whitelist)
-- [ ] Sessione condivisa tra sottodomini (richiede dominio personale)
+- [x] _(Pietro)_ Integrazione **Neon** dal Marketplace di Vercel, con branch del DB per le anteprime (Appendice A.7.3)
+- [x] `packages/db`: client Drizzle, schema, script di migrazione
+- [x] Migrazioni applicate in modo controllato (mai automatiche sul DB di produzione senza revisione) — _le migrazioni si rivedono nella PR, girano prima sul branch Neon dell'anteprima e poi, al merge, in produzione (task `db:migrate`)_
+- [x] **Better Auth** con login GitHub; accesso ristretto all'account di Pietro (o whitelist)
+- [ ] Sessione condivisa tra sottodomini (richiede dominio personale) — _non serve: senza dominio personale ogni app ha il suo indirizzo, e il login c'è solo in Soundverse_
 
 **Fatto quando**: Pietro fa login sul portale e una tabella di prova è leggibile da un'API.
 
 ### Fase 6 — Sotto-app Musica _(Claude Code)_
 
-Vedi §7 per il dettaglio. MVP in un paio di iterazioni, poi evoluzioni guidate dalle issue.
+Diventata **Soundverse** (ADR 0006): MVP (#7–#12), poi le iterazioni #21–#27, la modalità MPC (#33, #38–#45) e la sincronizzazione (#28, #56–#61). Il §7 resta come riferimento storico.
 
 ---
 

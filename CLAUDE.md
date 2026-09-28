@@ -214,9 +214,10 @@ Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-faile
 
 ## Stato e note operative
 
-- Fasi 1–4 completate: il portale è online su https://strangeverse-strange-verse.vercel.app, con il ruleset `protezione-main` attivo.
-- Fase 6: **MVP di Soundverse completo** (issue #7–#12): libreria, synth, batteria, campioni, timeline. Esclusi per scelta: ACE-Step e MCP (ADR 0006).
-- Fase 5 (DB e login) solo quando servirà, per esempio per sincronizzare la libreria fra dispositivi.
+- **Progetto completato** (2026-09-28): il piano di lavoro è chiuso. Resta aperta solo la #71 (accesso per altre persone e altri metodi di login), in sospeso finché Pietro non decide.
+- Portale: https://strangeverse-strange-verse.vercel.app, con il ruleset `protezione-main` attivo.
+- Soundverse: https://soundverse-strange-verse.vercel.app. Contiene synth, batteria, campioni, accordi, modalità MPC (pad, sequencer, chop, registrazione, mixer, MIDI), timeline con stem ed export WAV/MP3. Esclusi per scelta: ACE-Step e MCP (ADR 0006).
+- Fase 5 fatta (ADR 0011): Neon, Blob privato, login GitHub e passkey solo per Pietro, sincronizzazione fra dispositivi.
 - TypeScript è fermo alla 6.0 (ADR 0002). pnpm rifiuta le versioni pubblicate da meno di un giorno (ADR 0003).
 - pnpm blocca gli script di installazione dei pacchetti: quelli autorizzati sono in `allowBuilds` di `pnpm-workspace.yaml`. Oggi c'è solo `esbuild`.
 
