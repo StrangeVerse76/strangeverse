@@ -206,6 +206,7 @@ Per leggere un fallimento: `gh pr checks <n>`, poi `gh run view <id> --log-faile
 
 - **Vercel Hobby**: solo uso personale e non commerciale; funzioni brevi (fino a 60 s); una build alla volta; limiti mensili di invocazioni e traffico. Le API restano leggere e l'audio resta nel browser.
 - **Neon free**: spazio e compute limitati; il DB si sospende quando è inattivo, quindi il primo accesso è più lento.
+- **Neon, 10 branch al massimo**: ogni anteprima di Soundverse ne crea uno (`preview/<branch git>`). Il workflow `neon-pulizia.yml` lo elimina quando la PR si chiude. Se un'anteprima fallisce con "Resource provisioning failed", i branch sono finiti: vanno tolti quelli delle PR chiuse dalla console Neon.
 - **GitHub Actions**: minuti illimitati, perché il repo è pubblico.
 - I limiti cambiano: vanno verificati sulle pagine ufficiali prima di una scelta che ne dipende.
 
