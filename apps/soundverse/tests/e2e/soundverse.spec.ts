@@ -102,3 +102,13 @@ test('un clic prima del JavaScript evidenzia lo strumento quando l’app è pron
   await expect(nav.getByRole('link', { name: 'MIDI' })).toHaveAttribute('aria-current', 'true')
   await expect(page.getByRole('region', { name: 'MIDI', exact: true })).toBeInViewport()
 })
+
+test('la pagina si idrata senza differenze fra server e browser', async ({ page }) => {
+  const mismatches: string[] = []
+  page.on('console', (m) => {
+    if (/hydration/i.test(m.text())) mismatches.push(m.text())
+  })
+  await page.goto('/')
+  await expect(page.getByText('La libreria è vuota')).toBeVisible()
+  expect(mismatches).toEqual([])
+})

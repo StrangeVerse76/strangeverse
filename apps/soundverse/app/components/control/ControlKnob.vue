@@ -108,9 +108,12 @@ function onKeydown(event: KeyboardEvent) {
 
 // Geometria dell'arco (viewBox 0 0 40 40, centro 20,20, raggio 15).
 const R = 15
+/** Arrotondato al millesimo: server e browser calcolano seni e coseni con ultime cifre diverse. */
+const round = (v: number) => Math.round(v * 1000) / 1000
+
 function point(p: number) {
   const angle = ((-SWEEP / 2 + p * SWEEP - 90) * Math.PI) / 180
-  return { x: 20 + R * Math.cos(angle), y: 20 + R * Math.sin(angle) }
+  return { x: round(20 + R * Math.cos(angle)), y: round(20 + R * Math.sin(angle)) }
 }
 function arc(from: number, to: number) {
   const [a, b] = from <= to ? [from, to] : [to, from]

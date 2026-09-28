@@ -40,7 +40,11 @@ let chunks: Chunk[] = []
 let frame = 0
 let countTimer: ReturnType<typeof setTimeout> | undefined
 
-const supported = computed(() => import.meta.client && !!navigator.mediaDevices?.getUserMedia)
+// Si decide dopo il montaggio: il server non sa niente del microfono, e la prima resa deve
+// coincidere con la sua (altrimenti l'idratazione non torna).
+/** `null` finché non si sa (sul server e prima del montaggio). */
+const supported = ref<boolean | null>(null)
+onMounted(() => (supported.value = !!navigator.mediaDevices?.getUserMedia))
 const deviceLabel = computed(
   () => devices.value.find((d) => d.deviceId === deviceId.value)?.label || 'Ingresso predefinito',
 )
@@ -206,9 +210,11 @@ const levelText = computed(() =>
 
 <template>
   <div class="record">
-    <p v-if="!supported" class="hint">Questo browser non permette di registrare dal microfono.</p>
+    <p v-if="supported === false" class="hint">
+      Questo browser non permette di registrare dal microfono.
+    </p>
 
-    <template v-else>
+    <template v-else-if="supported">
       <div class="row">
         <button
           v-if="status === 'off' || status === 'denied'"
