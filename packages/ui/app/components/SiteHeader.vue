@@ -23,6 +23,7 @@ const route = useRoute()
         </NuxtLink>
       </nav>
 
+      <HeaderActions />
       <ThemeToggle />
     </div>
   </header>
