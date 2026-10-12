@@ -16,26 +16,26 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@better-auth/passkey": "1.7.6",
+    "@better-auth/passkey": "1.7.7",
     "@breezystack/lamejs": "1.2.7",
     "@pinia/nuxt": "1.0.2",
     "@strangeverse/db": "workspace:*",
     "@strangeverse/ui": "workspace:*",
-    "@vercel/blob": "2.8.0",
-    "better-auth": "1.7.6",
-    "drizzle-orm": "0.45.3",
-    "idb": "8.0.3",
-    "nuxt": "4.5.2",
+    "@vercel/blob": "2.8.1",
+    "better-auth": "1.7.7",
+    "drizzle-orm": "0.45.4",
+    "idb": "8.0.4",
+    "nuxt": "4.6.0",
     "pinia": "4.0.3",
     "vue": "3.5.43",
-    "vue-router": "5.3.1"
+    "vue-router": "5.4.0"
   },
   "devDependencies": {
-    "@playwright/test": "1.63.0",
+    "@playwright/test": "1.64.0",
     "@strangeverse/config": "workspace:*",
-    "eslint": "10.11.0",
+    "eslint": "10.12.0",
     "typescript": "6.0.3",
-    "vitest": "5.0.2",
-    "vue-tsc": "3.3.11"
+    "vitest": "5.0.3",
+    "vue-tsc": "3.3.12"
   }
 }
